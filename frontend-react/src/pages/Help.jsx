@@ -1,0 +1,298 @@
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ArrowRight, BookOpen } from "lucide-react";
+import AppShell from "../components/AppShell";
+import Brand from "../components/Brand";
+import { PageHeader } from "../components/ui";
+import { useAuth } from "../context/AuthContext";
+
+const sections = [
+  ["start", "Getting started"],
+  ["uploads", "Study uploads"],
+  ["imaging", "Imaging & metadata"],
+  ["research", "Research methodology"],
+  ["exports", "Reports & exports"],
+  ["access", "Roles & access"],
+  ["first-admin", "First administrator"],
+  ["troubleshooting", "Troubleshooting"],
+  ["limitations", "Intended use"],
+];
+export default function Help() {
+  const { user } = useAuth();
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, [hash]);
+  const body = (
+    <>
+      <PageHeader
+        eyebrow="THE RESEARCH HANDBOOK"
+        title="A little context goes a long way."
+        description="A practical guide to the workspace and its current capabilities."
+      />
+      <div className="help-layout">
+        <nav className="help-index" aria-label="Documentation sections">
+          {sections.map(([id, label]) => (
+            <a key={id} href={`#${id}`}>
+              {label}
+            </a>
+          ))}
+        </nav>
+        <div>
+          <section className="help-section" id="first-admin">
+            <h2>First administrator setup</h2>
+            <p>There are no default administrator credentials. Public registration cannot grant Admin access. An operator with trusted server access creates the first administrator using the existing backend environment:</p>
+            <pre><code>python -m app.database.create_admin</code></pre>
+            <p>Run from the backend directory after configuring a private environment and preparing the database using the reviewed backend setup guide. The command prompts for a password without echoing it and refuses to promote an existing account. Existing user access changes require the authenticated Admin user-management screen. Never paste passwords, tokens or environment files into support messages.</p>
+          </section>
+          <section className="help-section" id="start">
+            <h2>01 / Getting started</h2>
+            <p>
+              VascuAI organizes de-identified studies and their research
+              context. Create an account or sign in, register a research
+              subject, then create a case. A Clinician or Administrator can add
+              study files and update case metadata. Researchers and Data
+              Scientists can inspect case records and metadata.
+            </p>
+            <Link className="text-link" to={user ? "/dashboard" : "/register"}>
+              {user ? "Open workspace" : "Create an account"}
+              <ArrowRight size={13} />
+            </Link>
+          </section>
+          <section className="help-section" id="uploads">
+            <h2>02 / Study uploads</h2>
+            <ul>
+              <li>
+                2D images: PNG, JPEG, or TIFF; up to 20 MB and 8,192 pixels per
+                side.
+              </li>
+              <li>Raw NIfTI: .nii files up to 2,000 MB.</li>
+              <li>
+                Compressed NIfTI: .nii.gz files up to 512 MB, with a 2,000 MB
+                decompression limit.
+              </li>
+              <li>
+                NIfTI ingestion supports 3D and 4D header metadata. It preserves
+                the volume instead of converting it to a screenshot.
+              </li>
+              <li>
+                DICOM files and DICOM series are not supported. Convert using an
+                appropriate research workflow before upload.
+              </li>
+            </ul>
+            <p>
+              The upload center checks file extension and size in your browser.
+              The server validates the actual file. Upload progress reports
+              bytes transferred; server validation may continue after transfer
+              reaches 100%. Cancelling a browser transfer does not roll back a
+              file already received by the server.
+            </p>
+            <p>
+              Replacing a study file requires an explicit acknowledgement.
+              Previous upload versions are not retained by the current backend.
+            </p>
+          </section>
+          <section className="help-section" id="imaging">
+            <h2>03 / Imaging & metadata</h2>
+            <p>
+              Image metadata includes format, dimensions, channels, and data
+              type. NIfTI metadata includes dimensions, spacing, spatial units,
+              affine transform, and header codes. Missing metadata is shown as
+              unavailable.
+            </p>
+            <p>
+              2D upload preprocessing includes grayscale conversion, denoising,
+              enhancement, and normalization on the server. These
+              transformations do not run a segmentation model. NIfTI ingestion
+              reads the header without performing volumetric preprocessing or
+              changing CT intensities. Viewing a saved segmentation is a separate,
+              explicit action that retrieves protected CT and binary-mask data.
+            </p>
+            <p>
+              Open a case’s Segmentation tab to run the experimental 3D CT model.
+              Clinician and Admin accounts can choose a threshold from 0 to 1
+              (default 0.70) and start a synchronous run. All four case-reader
+              roles can refresh saved history and securely download current masks
+              and probability volumes. Stale results cannot be downloaded.
+              Probabilities are not calibrated clinical confidence.
+            </p>
+            <p>
+              Choose View CT + Segmentation on a current run. The viewer provides
+              axial, coronal and sagittal slices, CT window/level, overlay opacity
+              and binary-mask 3D rendering. It requires WebGL2, enough browser
+              memory, and matching three-dimensional CT/mask geometry with coded,
+              axis-aligned transforms and explicit millimetre units. Unknown
+              units, oblique/sheared transforms and mismatches are refused. Use
+              the protected downloads in a desktop imaging application when
+              these conditions are not met. Closing the viewer cancels downloads
+              and releases its resources; it does not cancel backend inference.
+            </p>
+          </section>
+          <section className="help-section" id="research">
+            <h2>04 / Research methodology</h2>
+            <p>
+              Segmentation, stenosis detection, severity classification, and
+              model explanation are distinct capabilities. Each requires
+              suitable data, an implemented method, and recorded evaluation
+              evidence.
+            </p>
+            <p>
+              A reproducible run should preserve the input study, preprocessing
+              settings, model artifact, code version, inference parameters,
+              timestamp, and output artifacts. A meaningful comparison uses the
+              same dataset split, reference annotations, and evaluation
+              protocol.
+            </p>
+            <p>
+              Segmentation evaluation may include Dice, IoU, precision, recall,
+              Hausdorff distance, and surface distance. Detection and
+              classification metrics belong in separate evaluations. No such
+              scores are available from the current API.
+            </p>
+            <p>
+              Dataset registration, train / validation / test manifests, model
+              registry, training jobs, and evaluation runs are not connected.
+              Saved case segmentation runs record their model and input checksums,
+              threshold, preprocessing configuration, and creation time.
+            </p>
+          </section>
+          <section className="help-section" id="exports">
+            <h2>05 / Reports & exports</h2>
+            <p>
+              The export center generates case metadata summaries on demand.
+              JSON and CSV exports include selected case fields. Open a summary
+              and choose Print / save PDF to use your browser’s print dialog.
+            </p>
+            <p>
+              Exported summaries do not contain inference findings or clinical
+              measurements. The preparation date is an export timestamp, not an
+              analysis timestamp. Server storage paths are excluded.
+            </p>
+          </section>
+          <section className="help-section" id="access">
+            <h2>06 / Roles & access</h2>
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Capability</th>
+                    <th>Clinician</th>
+                    <th>Researcher</th>
+                    <th>Data Scientist</th>
+                    <th>Admin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["Read cases & metadata", "Yes", "Yes", "Yes", "Yes"],
+                    [
+                      "Register patients / create & edit cases",
+                      "Yes",
+                      "No",
+                      "No",
+                      "Yes",
+                    ],
+                    ["Upload study files", "Yes", "No", "No", "Yes"],
+                    ["Research readiness screens", "No", "Yes", "Yes", "Yes"],
+                    ["Manage users & audit events", "No", "No", "No", "Yes"],
+                  ].map((row) => (
+                    <tr key={row[0]}>
+                      {row.map((value, i) => (
+                        <td key={i}>{value}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ marginTop: 16 }}>
+              Server checks control data access. Frontend navigation reflects
+              these permissions. Public registration cannot grant administrator
+              access. Profile updates and password changes use the authenticated
+              account API.
+            </p>
+          </section>
+          <section className="help-section" id="troubleshooting">
+            <h2>07 / Troubleshooting</h2>
+            <details>
+              <summary>My study upload was rejected.</summary>
+              <p>
+                Check the file extension, size, and validity. Renaming a file
+                does not convert it. Inspect the error returned by the server. A
+                TIFF may be accepted without a browser preview.
+              </p>
+            </details>
+            <details>
+              <summary>
+                I can’t see patient management or upload controls.
+              </summary>
+              <p>
+                These actions require Clinician or Administrator permissions.
+                Researchers and Data Scientists have read access to case records
+                and study metadata.
+              </p>
+            </details>
+            <details>
+              <summary>My case has no analysis results.</summary>
+              <p>
+                Open the case Segmentation tab and refresh its server history.
+                A Clinician or Admin can run the experimental model on a compatible
+                3D CT volume when the server is configured. A successful upload or
+                a Complete case status is not evidence of a saved segmentation.
+                If a request times out, refresh history before retrying because
+                server processing may continue.
+              </p>
+            </details>
+            <details>
+              <summary>I forgot my password.</summary>
+              <p>
+                Self-service password reset is not implemented. Contact your
+                workspace administrator. If signed in, change your password
+                through Account settings.
+              </p>
+            </details>
+          </section>
+          <section className="help-section" id="limitations">
+            <h2>08 / Intended use & limitations</h2>
+            <p>
+              VascuAI is a medical imaging research prototype, not an autonomous
+              diagnostic system. Use public or de-identified data. Clinical
+              findings, calibrated confidence, measurement accuracy, and
+              regulatory approval are not claimed.
+            </p>
+            <p>
+              Authentication, patient registration, case management, study
+              ingestion, metadata reads, and audit events are backed by server
+              APIs. Case summaries and activity notifications are assembled in
+              your browser from accessible case records. Display preferences and
+              notification read states are stored on this device.
+            </p>
+          </section>
+        </div>
+      </div>
+    </>
+  );
+  return user ? (
+    <AppShell breadcrumbs={[{ label: "Documentation" }]}>{body}</AppShell>
+  ) : (
+    <>
+      <header className="public-nav">
+        <Brand />
+        <Link className="btn btn-primary" to="/login">
+          Sign in
+          <ArrowRight size={14} />
+        </Link>
+      </header>
+      <main className="public-section" style={{ paddingTop: 35 }}>
+        {body}
+      </main>
+      <footer className="public-footer">
+        <span>VascuAI / Research documentation</span>
+        <span>
+          <BookOpen size={13} style={{ display: "inline", marginRight: 5 }} />
+          Research prototype · Qualified review required
+        </span>
+      </footer>
+    </>
+  );
+}

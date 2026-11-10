@@ -1,0 +1,54 @@
+# Local handoff bundles are artifacts, never source code.
+/model/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+**/*.pyc
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.onnx
+**/*.nii
+**/*.nii.gz
+# Local environment files and secrets
+**/.env
+**/.env.*
+!**/.env.example
+# Review snapshot: local dependencies, generated outputs and machine-specific files.
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+**/test-results/
+**/playwright-report/
+.vscode/
+.idea/
+# Private datasets, diagnostics, application storage and backup material.
+/datasets/
+/data/
+/diagnostics/
+/backups/
+/backend/uploads/*
+!/backend/uploads/.gitkeep
+/backend/outputs/*
+!/backend/outputs/.gitkeep
+**/*.dcm
+**/*.dicom
+**/*.mha
+**/*.mhd
+**/*.nrrd
+**/*.dump
+**/*.backup
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.key
+**/*.pem
+**/*.pfx
+**/*.p12
+**/*.crt
+**/*.cer
+# Ignore rules do not replace review of tracked files and history.
