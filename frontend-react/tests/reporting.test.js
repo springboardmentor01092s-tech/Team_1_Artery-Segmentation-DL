@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createStenosisReportingApi,validateSummary,validateReport,validateIndex} from '../src/api/stenosis-reporting-contract.js';
-import {reportJsonBlob} from '../src/lib/exports.js';
+import {downloadRecords,reportJsonBlob} from '../src/lib/exports.js';
 import {summaryFixture,indexFixture,reportFixture} from './reporting-fixtures.js';
+
+for (const field of ['reference_diameter','minimum_lumen_diameter','percentage_narrowing']) test(`report rejects unvalidated numeric ${field} before print or JSON presentation`, async () => {
+  const report = await reportFixture();
+  report.result.result.lesions[0].measurements[field] = {value:0,unit:field==='percentage_narrowing'?'percent':'mm',
+    unavailable_reason:null,method_id:'synthetic-test-only',method_version:'v1',definition:'Negative gate bypass fixture'};
+  await assert.rejects(validateReport(report,1,report.analysis.analysis_id), /validated quantitative/);
+});
 
 test('server-derived zero and populated summaries preserve unavailable metrics',()=>{
   for(const populated of [false,true]){const data=summaryFixture({populated});assert.equal(validateSummary(data),data);assert.equal(data.severity_distribution,null);}
@@ -52,4 +59,138 @@ test('unavailable measurements preserve independently optional method metadata',
     measurement[field]='invalid method with spaces';
     await assert.rejects(validateReport(report,1,report.analysis.analysis_id));
   }
+});
+
+function unbackedMeasurement(field, value = 37) {
+  return {value,unit:field==='percentage_narrowing'?'percent':'mm',unavailable_reason:null,
+    method_id:'synthetic-negative-export',method_version:'v1',definition:'Unvalidated synthetic export fixture'};
+}
+
+for (const field of ['reference_diameter','minimum_lumen_diameter','percentage_narrowing']) {
+  for (const value of [0,37]) test(`direct JSON export rejects unbacked ${field}=${value} without mutating input`,async()=>{
+    const report=await reportFixture();
+    report.result.result.lesions[0].measurements[field]=unbackedMeasurement(field,value);
+    const before=structuredClone(report);
+    assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+    assert.deepEqual(report,before);
+  });
+}
+
+for (const claim of ['flag','id','hash','all']) test(`direct JSON export rejects forged ${claim} claims`,async()=>{
+  const report=await reportFixture(),measurement=unbackedMeasurement('percentage_narrowing');
+  if (claim==='flag'||claim==='all') measurement.validated=true;
+  measurement.validation_gate={
+    gate_id:claim==='id'?'__proto__':'synthetic-unregistered',gate_version:'v1',
+    evidence_sha256:'a'.repeat(64),source_sha256:report.result.result.provenance.source.source_sha256,
+    analysis_method_id:report.result.result.provenance.method_id,
+    analysis_method_version:report.result.result.provenance.method_version,checkpoint_sha256:null,
+    validated:true,
+  };
+  report.result.result.lesions[0].measurements.percentage_narrowing=measurement;
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+});
+
+for (const shape of ['raw-result','response','nested-report','array']) test(`direct JSON export protects ${shape} measurements`,async()=>{
+  const report=await reportFixture(),response=report.result;
+  response.result.lesions.at(-1).measurements.minimum_lumen_diameter=unbackedMeasurement('minimum_lumen_diameter',0);
+  if (shape==='raw-result') report.result=response.result;
+  if (shape==='nested-report') report.result={cached:{report:{result:response}}};
+  if (shape==='array') report.result={history:[{result:null},{result:response}]};
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+});
+
+test('JSON export rechecks a cached report mutated after successful API validation',async()=>{
+  const report=await reportFixture();
+  await validateReport(report,1,report.analysis.analysis_id);
+  report.result.result.lesions[0].measurements.percentage_narrowing.value=37;
+  const before=structuredClone(report);
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+  assert.deepEqual(report,before);
+});
+
+test('JSON export preserves null measurements, reasons and the original report',async()=>{
+  const report=await reportFixture(),before=structuredClone(report);
+  const blob=reportJsonBlob(report),body=JSON.parse(await blob.text());
+  assert.equal(blob.type,'application/json;charset=utf-8');
+  assert.deepEqual(body,before);
+  assert.deepEqual(report,before);
+  assert.equal(body.result.result.lesions[0].measurements.percentage_narrowing.value,null);
+});
+
+test('unavailable reports with no result remain exportable',async()=>{
+  const report=await reportFixture({state:'failed'});
+  assert.deepEqual(JSON.parse(await reportJsonBlob(report).text()),report);
+});
+
+test('JSON export preserves segmentation/evaluation zeros and unrelated percentages',async()=>{
+  const report=await reportFixture();
+  report.result={segmentation:{metrics:{dice:0,iou:0,precision:0,recall:0}},
+    evaluations:[{macro:{dice:0,iou:0,precision:0,recall:0},pooled:{tp:0,fp:0,fn:0}}],
+    measurements:{percentage_change:0},percentage:0,percentage_narrowing:0};
+  assert.deepEqual(JSON.parse(await reportJsonBlob(report).text()),report);
+});
+
+test('ordinary unrelated JSON retains the existing allowlist and formatting',async()=>{
+  const report={schema_version:'1.0',document_type:'unrelated-synthetic',generated_at:'2026-11-12T00:00:00Z',
+    case:{case_id:0},analysis:{duration:0},report_state:'empty',unavailable_reason:null,
+    result:{count:0,percentage:37,items:[false,null,'example']},explanations:null,limitations:[]};
+  const before=structuredClone(report);
+  assert.equal(await reportJsonBlob(report).text(),JSON.stringify(before,null,2));
+  assert.deepEqual(report,before);
+});
+
+test('JSON export validates serialized toJSON output rather than a different source object',async()=>{
+  const report=await reportFixture(),lesion=report.result.result.lesions[0];
+  lesion.measurements.percentage_narrowing.toJSON=()=>unbackedMeasurement('percentage_narrowing');
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+});
+
+test('JSON export checks and emits the same snapshot without rereading getters',async()=>{
+  const report=await reportFixture(),measurement=report.result.result.lesions[0].measurements.percentage_narrowing;
+  let reads=0;
+  Object.defineProperty(measurement,'value',{enumerable:true,get:()=>++reads===1?null:37});
+  const body=JSON.parse(await reportJsonBlob(report).text());
+  assert.equal(reads,1);
+  assert.equal(body.result.result.lesions[0].measurements.percentage_narrowing.value,null);
+});
+
+for (const value of [NaN,Infinity,-Infinity]) test(`JSON export does not coerce ${value} into a valid unavailable measurement`,async()=>{
+  const report=await reportFixture();
+  report.result.result.lesions[0].measurements.percentage_narrowing=unbackedMeasurement('percentage_narrowing',value);
+  assert.throws(()=>reportJsonBlob(report),/explicit reason/);
+});
+
+function captureDownloads(t) {
+  const blobs=[],links=[],descriptor=Object.getOwnPropertyDescriptor(globalThis,'document');
+  t.mock.method(URL,'createObjectURL',blob=>{blobs.push(blob);return 'blob:synthetic-export';});
+  t.mock.method(URL,'revokeObjectURL',()=>{});
+  t.mock.method(globalThis,'setTimeout',callback=>{callback();return 0;});
+  Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>{
+    const link={click(){links.push(this);}};return link;
+  }}});
+  t.after(()=>{if(descriptor)Object.defineProperty(globalThis,'document',descriptor);else delete globalThis.document;});
+  return {blobs,links};
+}
+
+test('alternate case JSON download enforces the same nested measurement guard before creating a download',async t=>{
+  const {blobs,links}=captureDownloads(t),report=await reportFixture();
+  report.result.result.lesions[0].measurements.percentage_narrowing=unbackedMeasurement('percentage_narrowing');
+  const items=[{id:1,notes:{cached:report}}],before=structuredClone(items);
+  assert.throws(()=>downloadRecords(items,'json'),/validated quantitative/);
+  assert.deepEqual(blobs,[]);
+  assert.deepEqual(links,[]);
+  assert.deepEqual(items,before);
+});
+
+test('ordinary case JSON download preserves zero values, allowlisting and input',async t=>{
+  const {blobs,links}=captureDownloads(t),items=[{id:1,caseCode:'SYNTHETIC-CASE',age:0,notes:'Synthetic metadata only',private_path:'must not export'}];
+  const before=structuredClone(items);
+  downloadRecords(items,'json');
+  assert.equal(links.length,1);
+  const body=JSON.parse(await blobs[0].text());
+  assert.equal(body.document_type,'research_case_metadata');
+  assert.equal(body.cases[0].age_years,0);
+  assert.equal(body.cases[0].notes,items[0].notes);
+  assert.equal(body.cases[0].private_path,undefined);
+  assert.deepEqual(items,before);
 });

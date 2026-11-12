@@ -1,3 +1,5 @@
+import { requireMeasurementGate } from "./quantitative-gate.js";
+
 // Export an explicit allowlist; internal storage paths never leave the UI adapter.
 export function caseRecord(item) {
   return {
@@ -31,26 +33,59 @@ export function serializeCsv(records) {
   ].join("\r\n");
 }
 
-// A typed, authorized report snapshot; unlike caseRecord, this contains supplied
-// analysis data. The API validator is the allowlisted contract boundary.
+const stenosisMeasurementFields = [
+  "reference_diameter", "minimum_lumen_diameter", "percentage_narrowing",
+];
+
+function requireExportableMeasurements(value, provenance) {
+  if (!value || typeof value !== "object") return;
+  const context = Object.hasOwn(value, "provenance") ? value.provenance : provenance;
+  // These are the contract's lesion.measurements fields, not arbitrary numeric
+  // properties or segmentation/evaluation metrics. Walk wrappers and arrays too.
+  const measurements = value.measurements;
+  if (measurements && typeof measurements === "object") {
+    for (const field of stenosisMeasurementFields) {
+      if (!Object.hasOwn(measurements, field)) continue;
+      const measurement = measurements[field];
+      if (measurement?.value === null) {
+        const reason = measurement.unavailable_reason;
+        if (typeof reason?.code !== "string" || !reason.code.trim()
+            || typeof reason.message !== "string" || !reason.message.trim()) {
+          throw new Error("Unavailable stenosis measurements require an explicit reason.");
+        }
+      }
+      requireMeasurementGate(measurement, context);
+    }
+  }
+  for (const child of Object.values(value)) requireExportableMeasurements(child, context);
+}
+
+function exportJson(value) {
+  // Check the exact detached JSON snapshot that will be emitted, including any
+  // getters/toJSON transformations. Never reserialize the mutable input afterward.
+  const content = JSON.stringify(value, null, 2);
+  requireExportableMeasurements(JSON.parse(content));
+  return content;
+}
+
+// Keep the report allowlist and independently enforce the measurement policy at
+// the export boundary, even for direct callers that bypass the API validator.
 export function reportJsonBlob(report) {
-  return new Blob([JSON.stringify({schema_version:report.schema_version,document_type:report.document_type,generated_at:report.generated_at,
+  return new Blob([exportJson({schema_version:report.schema_version,document_type:report.document_type,generated_at:report.generated_at,
     case:report.case,analysis:report.analysis,report_state:report.report_state,unavailable_reason:report.unavailable_reason,
-    result:report.result,explanations:report.explanations,limitations:report.limitations},null,2)],{type:'application/json;charset=utf-8'});
+    result:report.result,explanations:report.explanations,limitations:report.limitations})],{type:'application/json;charset=utf-8'});
 }
 export function downloadRecords(items, format) {
   const records = items.map(caseRecord);
   const content =
     format === "json"
-      ? JSON.stringify(
+      ? exportJson(
           {
             exported_at: new Date().toISOString(),
             document_type: "research_case_metadata",
             analysis_available: false,
             cases: records,
           },
-          null,
-          2,
         )
       : serializeCsv(records);
   const blob = new Blob([format === "csv" ? "\uFEFF" : "", content], {
