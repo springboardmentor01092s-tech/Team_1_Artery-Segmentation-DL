@@ -39,6 +39,11 @@ const stenosisMeasurementFields = [
 
 function requireExportableMeasurements(value, provenance) {
   if (!value || typeof value !== "object") return;
+  if (value.schema_version === "experimental-candidates/1.0"
+      || (value.kind === "experimental_candidate" && Object.hasOwn(value, "candidate_id")
+        && Object.hasOwn(value, "sample_ijk") && Object.hasOwn(value, "world_ras_mm"))) {
+    throw new Error("Experimental candidate previews cannot be included in ordinary reports or metadata exports. Use the separate standalone research-preview JSON workflow.");
+  }
   const context = Object.hasOwn(value, "provenance") ? value.provenance : provenance;
   // These are the contract's lesion.measurements fields, not arbitrary numeric
   // properties or segmentation/evaluation metrics. Walk wrappers and arrays too.

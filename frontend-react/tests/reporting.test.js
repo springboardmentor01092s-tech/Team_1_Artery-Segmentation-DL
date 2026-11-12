@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {createStenosisReportingApi,validateSummary,validateReport,validateIndex} from '../src/api/stenosis-reporting-contract.js';
 import {downloadRecords,reportJsonBlob} from '../src/lib/exports.js';
 import {summaryFixture,indexFixture,reportFixture} from './reporting-fixtures.js';
+import {loadExperimentalFixture} from './experimental-candidates-fixtures.js';
+import {validateExperimentalPreview} from '../src/lib/experimental-candidates.js';
 
 for (const field of ['reference_diameter','minimum_lumen_diameter','percentage_narrowing']) test(`report rejects unvalidated numeric ${field} before print or JSON presentation`, async () => {
   const report = await reportFixture();
@@ -193,4 +195,45 @@ test('ordinary case JSON download preserves zero values, allowlisting and input'
   assert.equal(body.cases[0].notes,items[0].notes);
   assert.equal(body.cases[0].private_path,undefined);
   assert.deepEqual(items,before);
+});
+
+for (const wrapper of ['result','notes-array','case-metadata','candidate-only','serialized-wrapper']) test(`ordinary report JSON refuses experimental ${wrapper} before Blob creation`,async t=>{
+  const {preview}=await loadExperimentalFixture(),report=await reportFixture();
+  if(wrapper==='result')report.result=preview;
+  if(wrapper==='notes-array')report.result={retained:{notes:[{metadata:{preview}}]}};
+  if(wrapper==='case-metadata')report.case.metadata={preview};
+  if(wrapper==='candidate-only')report.result={items:[preview.candidates[0]]};
+  if(wrapper==='serialized-wrapper')report.result={toJSON:()=>({preview})};
+  const before=wrapper==='serialized-wrapper'?null:structuredClone(report);
+  let blobs=0;
+  t.mock.method(globalThis,'Blob',function ForbiddenBlob(){blobs++;throw new Error('Blob must not be created');});
+  assert.throws(()=>reportJsonBlob(report),/Experimental candidate previews cannot be included in ordinary reports or metadata exports/);
+  assert.equal(blobs,0);
+  if(before)assert.deepEqual(report,before);
+});
+
+for (const wrapper of ['preview','metadata','notes-array','candidate-only']) test(`ordinary case metadata JSON refuses experimental ${wrapper} before Blob/URL/download`,async t=>{
+  const {preview}=await loadExperimentalFixture(),{blobs,links}=captureDownloads(t);
+  const notes=wrapper==='preview'?preview:wrapper==='metadata'?{metadata:{preview}}:wrapper==='candidate-only'?[preview.candidates[0]]:{notes:[{preview}]};
+  const items=[{id:1,caseCode:'SYNTHETIC-ONLY',notes}],before=structuredClone(items);
+  let constructors=0;
+  t.mock.method(globalThis,'Blob',function ForbiddenBlob(){constructors++;throw new Error('Blob must not be created');});
+  assert.throws(()=>downloadRecords(items,'json'),/Experimental candidate previews cannot be included in ordinary reports or metadata exports/);
+  assert.equal(constructors,0);assert.deepEqual(blobs,[]);assert.deepEqual(links,[]);assert.deepEqual(items,before);
+});
+
+test('standalone research-preview JSON remains usable without entering ordinary exports',async()=>{
+  const f=await loadExperimentalFixture(),before=structuredClone(f.preview);
+  const standalone=JSON.parse(JSON.stringify(f.preview,null,2));
+  assert.equal(standalone.schema_version,'experimental-candidates/1.0');
+  assert.ok(standalone.candidates.length>0);
+  assert.deepEqual(await validateExperimentalPreview(standalone,f.geometry,f.segmentation,f.verifiedMask),before);
+  assert.deepEqual(f.preview,before);
+});
+
+test('ordinary JSON still preserves unrelated experimental wording and genuine evaluation zeros',async()=>{
+  const report=await reportFixture();
+  report.result={schema_version:'ordinary-metadata/1.0',kind:'experimental_candidate_note',percentage:0,
+    metrics:{dice:0,iou:0,precision:0,recall:0},notes:['experimental candidate previews are unavailable']};
+  assert.deepEqual(JSON.parse(await reportJsonBlob(report).text()),report);
 });
