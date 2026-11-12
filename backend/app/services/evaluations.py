@@ -292,10 +292,7 @@ def history_members(db, row, access=None):
     return ids
 
 
-def model_runs(db, model_id, *, limit=20, offset=0):
-    model = db.get(EvaluationModel, model_id)
-    if model is None:
-        raise HTTPException(404, "Model not found")
+def readable_evaluations():
     # Exclude an evaluation if ANY member is outside the very same SQL scope
     # used by the protected case lookup. Denied records never occupy an offset
     # or the look-ahead slot. No detailed case payloads are reconstructed.
@@ -303,8 +300,29 @@ def model_runs(db, model_id, *, limit=20, offset=0):
     denied_member = select(EvaluationCase.case_id).where(
         EvaluationCase.evaluation_id == Evaluation.id,
         EvaluationCase.case_id.not_in(readable_ids)).correlate(Evaluation).exists()
-    rows = db.scalars(select(Evaluation).where(Evaluation.model_id == model_id)
-        .where(~denied_member)
+    return select(Evaluation).where(~denied_member)
+
+
+def list_evaluations(db, *, limit=20, offset=0):
+    rows = db.scalars(readable_evaluations()
+        .order_by(Evaluation.created_at, Evaluation.id).offset(offset).limit(limit + 1)).all()
+    items = []
+    access = {}
+    for row in rows:
+        ids = history_members(db, row, access)
+        if len(items) < limit:
+            items.append(dict(**identity(row), case_ids=ids))
+    next_offset = offset + limit if len(rows) > limit else None
+    capped = next_offset is not None and next_offset > MAX_HISTORY_OFFSET
+    return dict(items=items, limit=limit, offset=offset,
+                next_offset=None if capped else next_offset, offset_limit_reached=capped)
+
+
+def model_runs(db, model_id, *, limit=20, offset=0):
+    model = db.get(EvaluationModel, model_id)
+    if model is None:
+        raise HTTPException(404, "Model not found")
+    rows = db.scalars(readable_evaluations().where(Evaluation.model_id == model_id)
         .order_by(Evaluation.created_at, Evaluation.id).offset(offset).limit(limit + 1)).all()
     more = len(rows) > limit
     evaluations = []

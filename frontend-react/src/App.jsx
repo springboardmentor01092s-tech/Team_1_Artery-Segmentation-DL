@@ -40,10 +40,10 @@ const ReportPreview = lazy(() =>
 const Alerts = lazy(() => import("./pages/Alerts"));
 const Research = lazy(() => import("./pages/Research"));
 const Evaluation = lazy(() =>
-  import("./pages/Research").then((m) => ({ default: m.Evaluation })),
+  import("./pages/Evaluations"),
 );
 const ModelComparison = lazy(() =>
-  import("./pages/Research").then((m) => ({ default: m.ModelComparison })),
+  import("./pages/Evaluations").then((m) => ({ default: m.ModelComparison })),
 );
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));

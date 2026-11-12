@@ -59,3 +59,12 @@ test('login failures and validation errors stay on the form', async () => {
     adapter: (config) => denied(config, 422, [{ msg: 'Password too short' }]),
   }), /Password too short/);
 });
+
+test('structured API errors retain the actionable message without clearing credentials', async () => {
+  browser();
+  localStorage.setItem('vascuai_token', 'test-token');
+  await assert.rejects(api.get('/stenosis/analytics/summary', {
+    adapter: (config) => denied(config, 503, { code: 'schema_unavailable', message: 'Schema maintenance required' }),
+  }), /Schema maintenance required/);
+  assert.equal(localStorage.getItem('vascuai_token'), 'test-token');
+});

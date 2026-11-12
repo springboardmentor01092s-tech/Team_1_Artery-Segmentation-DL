@@ -1,3 +1,5 @@
+import { ROLES } from '../constants/permissions.js';
+
 export const toUser = (user) => ({ ...user, name: user.full_name });
 
 export function createAuthApi(api) {
@@ -13,7 +15,14 @@ export function createAuthApi(api) {
       });
       return this.login(payload.email, payload.password);
     },
-    async me() { return toUser((await api.get('/auth/me')).data); },
+    async me(options) {
+      const user = (await api.get('/auth/me', options)).data;
+      if (!user || !Number.isSafeInteger(user.id) || user.id <= 0 || user.is_active !== true
+          || !Object.values(ROLES).includes(user.role) || typeof user.full_name !== 'string' || !user.full_name.trim()) {
+        throw new Error('The server returned an invalid session identity');
+      }
+      return toUser(user);
+    },
     async logout() { await api.post('/auth/logout'); },
     async updateProfile(payload) {
       return toUser((await api.patch('/auth/me', {

@@ -53,6 +53,7 @@ export async function installApi(
       body: method === "POST" || method === "PATCH" ? req.postData() : null,
     });
     const json = (body, status = 200) => route.fulfill({ status, json: body });
+    if (path === '/evaluations' && method === 'GET') return json({ items: [], limit: 20, offset: 0, next_offset: null, offset_limit_reached: false });
     if (path === "/auth/me" && method === "GET") return json(user);
     if (path === "/auth/login")
       return json({ access_token: "browser-test-token", user });

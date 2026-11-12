@@ -3,9 +3,11 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/AuthLayout";
+import SessionRecovery from "../components/SessionRecovery";
+import { Loading } from "../components/ui";
 
 export default function Login() {
-  const { login, user, sessionError } = useAuth();
+  const { login, user, sessionError, loading, restorationError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
@@ -16,6 +18,8 @@ export default function Login() {
     ? `${location.state.from.pathname}${location.state.from.search || ""}${location.state.from.hash || ""}`
     : "/dashboard";
   if (user) return <Navigate to={destination} replace />;
+  if (loading) return <Loading label="Verifying your session…" />;
+  if (restorationError) return <SessionRecovery />;
   async function submit(event) {
     event.preventDefault();
     setBusy(true);

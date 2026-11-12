@@ -300,6 +300,23 @@ existing Chromium browser, set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH. The real dis
 Axios/auth HTTP contract helper requires frontend dependencies first, then
 `python scripts/test_frontend_contract.py` from `backend/`.
 
+The browser runner starts its own loopback Vite server and refuses to reuse an
+existing server by default. Set `PLAYWRIGHT_BASE_URL` to a loopback HTTP origin
+(for example `http://127.0.0.1:5195`) to select an unused port. Set
+`PLAYWRIGHT_ARTIFACT_DIR` to an external directory for browser results and the
+Vite cache. Screenshots use per-test output paths. Test startup does not read
+private `.env` files or proxy to the development API. Explicit isolated live
+integration requires `PLAYWRIGHT_LIVE_API_URL` (a loopback HTTP origin) in addition
+to its disposable fixture configuration. Do not point it at application databases
+or patient data. `PLAYWRIGHT_REUSE_SERVER=1` is an explicit reuse opt-in.
+
+Session restoration keeps credentials after temporary verification failures but
+does not load protected content or trust cached roles. Retry verification or sign
+out locally from the recovery screen. Invalid/expired tokens still clear on 401.
+Imported segmentation evaluations are available at `/evaluation`; comparison at
+`/models/compare` requires exact case membership. These read-only screens neither
+import data nor start training/inference. See [the evaluation contract](docs/evaluation-api.md).
+
 Read-only migration inspections are `python -m alembic current`, `heads` and `history`.
 `python -m alembic check` compares an already migrated database against model metadata;
 it is not a substitute for backup review or an upgrade.

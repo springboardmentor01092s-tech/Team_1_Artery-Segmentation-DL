@@ -73,7 +73,7 @@ test('authenticated orthogonal viewer renders real synthetic data and keyboard c
   await page.getByLabel('View',{exact:true}).selectOption('slices');
   const violations = await new AxeBuilder({page}).include('.volume-viewer').withTags(['wcag2a','wcag2aa']).analyze();
   expect(violations.violations).toEqual([]);
-  await page.screenshot({path:'test-results/viewer-desktop.png',fullPage:true});
+  await page.screenshot({path:test.info().outputPath('viewer-desktop.png'),fullPage:true});
   const retained = await canvas.elementHandle();
   await page.getByRole('button',{name:'Close viewer',exact:true}).click();
   await expect(canvas).toHaveCount(0);
@@ -177,7 +177,7 @@ test('mobile viewer remains accessible and does not overflow', async ({ page }) 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const violations = await new AxeBuilder({page}).include('.volume-viewer').withTags(['wcag2a','wcag2aa']).analyze();
   expect(violations.violations).toEqual([]);
-  await page.screenshot({path:'test-results/viewer-mobile.png',fullPage:true});
+  await page.screenshot({path:test.info().outputPath('viewer-mobile.png'),fullPage:true});
 });
 
 for (const [name, options, message] of [

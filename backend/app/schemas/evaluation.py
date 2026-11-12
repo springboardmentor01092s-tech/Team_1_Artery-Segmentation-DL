@@ -182,6 +182,14 @@ class EvaluationMembership(EvaluationIdentity):
     case_ids: list[int]
 
 
+class EvaluationIndex(StrictModel):
+    items: list[EvaluationMembership]
+    limit: int
+    offset: int
+    next_offset: int | None
+    offset_limit_reached: bool
+
+
 class MacroDenominator(StrictModel):
     defined_cases: int
     undefined_cases: int
