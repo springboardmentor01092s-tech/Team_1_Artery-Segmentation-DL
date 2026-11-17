@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createStenosisReportingApi,validateSummary,validateReport,validateIndex} from '../src/api/stenosis-reporting-contract.js';
-import {downloadRecords,reportJsonBlob} from '../src/lib/exports.js';
+import {downloadRecords,reportJsonBlob,downloadCaseWorkflow} from '../src/lib/exports.js';
+import {workflowFixture} from './case-workflow-fixtures.js';
 import {summaryFixture,indexFixture,reportFixture} from './reporting-fixtures.js';
 import {loadExperimentalFixture} from './experimental-candidates-fixtures.js';
 import {validateExperimentalPreview} from '../src/lib/experimental-candidates.js';
@@ -173,6 +174,31 @@ function captureDownloads(t) {
   t.after(()=>{if(descriptor)Object.defineProperty(globalThis,'document',descriptor);else delete globalThis.document;});
   return {blobs,links};
 }
+
+test('research workflow download retains bound reviewer provenance without mutation or clinical claims',async t=>{
+  const {blobs,links}=captureDownloads(t),data=workflowFixture({reviewed:true}),before=structuredClone(data);
+  data.private_path='must not export';data.review.private_path='must not export';
+  const input=structuredClone(data);
+  downloadCaseWorkflow(data);
+  const body=JSON.parse(await blobs[0].text());
+  assert.equal(links.length,1);assert.equal(body.document_type,'research_case_workflow');
+  assert.equal(body.clinical_validation,false);assert.equal(body.workflow.review.reviewer_id,1);
+  assert.equal(body.workflow.review.scope,'research_workflow_v1');assert.deepEqual(data,input);
+  assert.equal(body.workflow.private_path,undefined);assert.equal(body.workflow.review.private_path,undefined);
+  assert.equal(body.workflow.review.id,before.review.id);
+});
+test('workflow export validates serialized snapshot claims before creating a Blob',t=>{
+  const {blobs}=captureDownloads(t),data=workflowFixture();
+  data.toJSON=()=>({...workflowFixture(),clinical_validation:true});
+  assert.throws(()=>downloadCaseWorkflow(data),/inconsistent/);assert.equal(blobs.length,0);
+});
+for(const value of [0,37])test(`workflow JSON export also refuses unbacked stenosis ${value} before any Blob`,async t=>{
+  const {blobs,links}=captureDownloads(t),report=await reportFixture(),data=workflowFixture();
+  report.result.result.lesions[0].measurements.percentage_narrowing=unbackedMeasurement('percentage_narrowing',value);
+  data.cached=report;
+  assert.throws(()=>downloadCaseWorkflow(data),/validated quantitative/);
+  assert.equal(blobs.length,0);assert.equal(links.length,0);
+});
 
 test('alternate case JSON download enforces the same nested measurement guard before creating a download',async t=>{
   const {blobs,links}=captureDownloads(t),report=await reportFixture();

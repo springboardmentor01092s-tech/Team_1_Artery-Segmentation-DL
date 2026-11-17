@@ -1,5 +1,6 @@
 """Synchronous, authenticated research inference on a case's stored CT volume."""
 from pathlib import Path
+from datetime import datetime, timezone
 from threading import BoundedSemaphore
 from typing import Literal
 from uuid import UUID, uuid4
@@ -50,8 +51,9 @@ def readable_cases():
     return select(Case)
 
 
-def get_case(db, case_id):
-    case = db.scalar(readable_cases().where(Case.id == case_id))
+def get_case(db, case_id, lock=False):
+    statement = readable_cases().where(Case.id == case_id)
+    case = db.scalar(statement.with_for_update() if lock else statement)
     if case is None:
         raise HTTPException(404, "Case not found")
     return case
@@ -126,14 +128,16 @@ def create_segmentation(case_id: int, request: SegmentationRequest,
         initial_checksum = source_sha256(source)
         metadata = execute_inference(source, directory, request.threshold if request.threshold is not None else settings.VASCULAI_MODEL_THRESHOLD)
         db.expire_all()
-        case = get_case(db, case_id)
+        case = get_case(db, case_id, lock=True)
         checksum = current_source_sha256(case)
         if case.volume_path != source_relative or checksum != initial_checksum or metadata.get("source_sha256") != initial_checksum:
             raise HTTPException(409, "Volume changed during inference; run again on the current upload.")
         result = SegmentationResult(id=result_id, case_id=case_id,
                                     source_volume_path=source_relative,
-                                    metadata_json=metadata, created_by=actor_id)
+                                    metadata_json=metadata, created_by=actor_id,
+                                    created_at=datetime.now(timezone.utc))
         db.add(result)
+        case.status = "awaiting_review"
         record_event(db, "case.segmentation_created", actor_id, case_id)
         db.flush()
         response = response_for(result, case, checksum)

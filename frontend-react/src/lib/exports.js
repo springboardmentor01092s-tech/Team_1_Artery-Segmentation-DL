@@ -1,4 +1,5 @@
 import { requireMeasurementGate } from "./quantitative-gate.js";
+import { toCaseWorkflow } from '../api/cases-contract.js';
 
 // Export an explicit allowlist; internal storage paths never leave the UI adapter.
 export function caseRecord(item) {
@@ -103,6 +104,31 @@ export function downloadRecords(items, format) {
   const link = document.createElement("a");
   link.href = url;
   link.download = `vascuai-case-${items.length === 1 ? items[0].id : "records"}.${format}`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function downloadCaseWorkflow(workflow) {
+  // Validate the detached serialized snapshot before allowlisting, so a toJSON
+  // hook or an unexpected nested measurement cannot bypass any export guard.
+  const data = JSON.parse(exportJson(workflow));
+  toCaseWorkflow(data, data?.case_id);
+  const pick = (value, keys) => value === null ? null : Object.fromEntries(keys.map(key => [key, value[key]]));
+  const hashes = ['source_sha256', 'checkpoint_sha256', 'mask_sha256', 'probabilities_sha256', 'threshold'];
+  const runKeys = ['segmentation_result_id', 'created_at', ...hashes];
+  const reviewKeys = ['id', 'case_id', 'segmentation_result_id', 'reviewer_id', 'reviewer_role', 'reviewed_at',
+    'outcome', 'note', 'current', 'scope', ...hashes];
+  const safe = { case_id:data.case_id, case_status:data.case_status, research_only:true, clinical_validation:false,
+    model_analysis:{available:data.model_analysis.available,reason:data.model_analysis.reason,run:pick(data.model_analysis.run,runKeys)},
+    review:pick(data.review,reviewKeys), review_history:data.review_history.map(review=>pick(review,reviewKeys)),
+    review_requires_new_run:data.review_requires_new_run };
+  const content = exportJson({ document_type: 'research_case_workflow', exported_at: new Date().toISOString(),
+    clinical_validation: false, workflow:safe });
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `vascuai-case-${workflow.case_id}-workflow.json`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -201,6 +201,8 @@ def update_case_metadata(
     changed = False
     for field, value in updates.model_dump(exclude_none=True).items():
         if field in mutable:
+            if field == "modality" and value != case.modality:
+                case.status = "pending"
             setattr(case, field, value)
             changed = True
 
@@ -491,6 +493,7 @@ def upload_case_volume(
 
         previous_volume_path = case.volume_path
         case.volume_path = relative_volume_path
+        case.status = "pending"
 
         # ── Upsert VolumeMetadata row ─────────────────────────────────────────
         existing_meta = db.scalar(

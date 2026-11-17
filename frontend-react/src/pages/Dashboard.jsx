@@ -49,13 +49,13 @@ export default function Dashboard() {
   const recent = [...cases]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
-  const counts = ["Complete", "Processing", "Pending", "Failed"].map(
+  const counts = ["Complete", "Processing", "Pending", "Failed", "Awaiting review", "Changes requested"].map(
     (status) => ({
       status,
       count: cases.filter((c) => c.status === status).length,
     }),
   );
-  const colors = ["#222222", "#8a9a7b", "#bdc7b0", "#d5c9b8"];
+  const colors = ["#222222", "#8a9a7b", "#bdc7b0", "#d5c9b8", "#9da99a", "#b3ada3"];
   const daily = Array.from({ length: days }, (_, i) => {
     const date = new Date(today);
     date.setHours(0, 0, 0, 0);

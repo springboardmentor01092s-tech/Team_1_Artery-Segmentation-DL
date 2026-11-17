@@ -15,6 +15,7 @@ from app.routers.patients import router as patients_router
 from app.routers.cases import router as cases_router
 from app.routers.admin import router as admin_router
 from app.routers.segmentation import router as segmentation_router
+from app.routers.case_workflow import router as case_workflow_router
 from app.routers.stenosis import router as stenosis_router
 from app.routers.stenosis_jobs import router as stenosis_jobs_router
 from app.routers.stenosis_results import router as stenosis_results_router
@@ -80,6 +81,7 @@ async def unexpected_error(request: Request, exc: Exception):
 
 app.include_router(admin_router, prefix=settings.API_V1_STR)
 app.include_router(segmentation_router, prefix=settings.API_V1_STR)
+app.include_router(case_workflow_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_jobs_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_results_router, prefix=settings.API_V1_STR)
