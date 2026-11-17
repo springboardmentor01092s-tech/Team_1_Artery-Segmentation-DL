@@ -8,10 +8,26 @@ import { gzipSync } from 'fflate';
 import { MAX_TRANSFER_BYTES } from '../src/lib/volume-geometry.js';
 import { decode } from '../src/workers/volume.worker.js';
 import { loadViewerPair } from '../src/lib/volume-loader.js';
-import { releaseViewer } from '../src/lib/niivue-adapter.js';
+import { nextCameraElevation, normalizeCameraElevation, releaseViewer } from '../src/lib/niivue-adapter.js';
 import { navigateExperimentalCandidate, projectExperimentalCandidates,
   validateExperimentalPreview } from '../src/lib/experimental-candidates.js';
 import { loadExperimentalFixture } from './experimental-candidates-fixtures.js';
+
+test('camera elevation uses equivalent signed degrees for bounded controls', () => {
+  for (const [angle, expected] of [[10,10],[280,-80],[282,-78],[350,-10],[360,0],[-350,10],[270,-90],[90,90],[-90,-90]]) {
+    assert.equal(normalizeCameraElevation(angle), expected);
+  }
+  for (const value of [NaN, Infinity, -Infinity, '280', null]) {
+    assert.throws(() => normalizeCameraElevation(value), /must be finite/);
+  }
+});
+
+test('tilt returns gradually from mouse angles past the poles and keeps normal bounds', () => {
+  for (const [angle, step, expected] of [[280,15,-65],[282,-15,-90],[150,-15,135],[-150,15,-135],[150,15,150],[-150,-15,-150],[90,15,90],[-90,-15,-90],[95,-15,80],[-95,15,-80],[350,15,5]]) {
+    assert.equal(nextCameraElevation(angle, step), expected);
+  }
+  assert.throws(() => nextCameraElevation(0, Infinity), /must be finite/);
+});
 
 const id = '12345678-1234-4567-890a-123456789abc';
 const array = buffer => buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);

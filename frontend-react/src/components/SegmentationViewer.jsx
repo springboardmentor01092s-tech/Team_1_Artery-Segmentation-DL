@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { segmentationApi } from '../api/segmentation';
 import { loadViewerPair } from '../lib/volume-loader';
-import { createVolumeViewer, graphicsCapabilities, releaseViewer } from '../lib/niivue-adapter';
+import { createVolumeViewer, graphicsCapabilities, nextCameraElevation, normalizeCameraElevation, releaseViewer } from '../lib/niivue-adapter';
 import { useLesionLayer } from '../hooks/useLesionLayer';
 import { useCandidateRegion } from '../hooks/useCandidateRegion';
 import { useExplanationLayer } from '../hooks/useExplanationLayer';
@@ -96,7 +96,7 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
         const syncCamera = () => {
           if (alive && !controller.signal.aborted) setCamera({
             azimuth: viewer.scene.renderAzimuth,
-            elevation: viewer.scene.renderElevation,
+            elevation: normalizeCameraElevation(viewer.scene.renderElevation),
             zoom: viewer.scene.volScaleMultiplier,
           });
         };
@@ -172,7 +172,7 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
   function tilt(amount) {
     const viewer = instance.current;
     if (!viewer) return;
-    try { viewer.setRenderAzimuthElevation(viewer.scene.renderAzimuth, Math.max(-90, Math.min(90, viewer.scene.renderElevation + amount))); }
+    try { viewer.setRenderAzimuthElevation(viewer.scene.renderAzimuth, nextCameraElevation(viewer.scene.renderElevation, amount)); }
     catch { stopRendering(); }
   }
   function zoom(direction) {
