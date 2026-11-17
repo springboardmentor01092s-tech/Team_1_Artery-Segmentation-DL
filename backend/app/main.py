@@ -22,6 +22,7 @@ from app.routers.stenosis_results import router as stenosis_results_router
 from app.routers.stenosis_explanations import router as stenosis_explanations_router
 from app.routers.stenosis_reporting import router as stenosis_reporting_router
 from app.routers.evaluations import router as evaluations_router
+from app.routers.reference_profiles import router as reference_profiles_router
 from app.database.session import check_database_connection
 
 
@@ -88,6 +89,7 @@ app.include_router(stenosis_results_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_explanations_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_reporting_router, prefix=settings.API_V1_STR)
 app.include_router(evaluations_router, prefix=settings.API_V1_STR)
+app.include_router(reference_profiles_router, prefix=settings.API_V1_STR)
 
 app.include_router(
     patients_router,

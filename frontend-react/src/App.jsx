@@ -51,6 +51,7 @@ const Security = lazy(() =>
   import("./pages/Settings").then((m) => ({ default: m.Security })),
 );
 const Help = lazy(() => import("./pages/Help"));
+const ReferenceProfiles = lazy(() => import("./pages/ReferenceProfiles"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AuditLogs = lazy(() =>
   import("./pages/admin/Operations").then((m) => ({ default: m.AuditLogs })),
@@ -106,6 +107,7 @@ export default function App() {
     ["/models", () => <Research section="models" />, researchers],
     ["/models/compare", () => <ModelComparison />, researchers],
     ["/evaluation", () => <Evaluation />, researchers],
+    ["/research/reference-profiles", () => <ReferenceProfiles />, researchers],
     [
       "/evaluation/segmentation",
       () => <Evaluation initialTab="Segmentation" />,

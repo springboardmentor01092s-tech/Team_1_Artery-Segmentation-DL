@@ -1,7 +1,7 @@
 """Append-only research workflow decisions, bound to one saved model run."""
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.session import Base
@@ -28,4 +28,4 @@ class CaseReview(Base):
     checkpoint_sha256: Mapped[str] = mapped_column(String(64))
     mask_sha256: Mapped[str] = mapped_column(String(64))
     probabilities_sha256: Mapped[str] = mapped_column(String(64))
-    threshold: Mapped[float] = mapped_column()
+    threshold: Mapped[float] = mapped_column(Float)

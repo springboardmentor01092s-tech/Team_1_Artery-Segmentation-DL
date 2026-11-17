@@ -49,6 +49,7 @@ export default function Sidebar({ onClose, hidden }) {
             [
               ["Datasets", "/datasets", Database],
               ["Model evaluation", "/evaluation", ChartNoAxesCombined],
+              ["Reference profiles", "/research/reference-profiles", ScanLine],
               ["Experiments", "/experiments", FlaskConical],
               ["Model registry", "/models", Cpu],
             ],

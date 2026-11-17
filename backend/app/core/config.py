@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     OUTPUT_DIR: str = "./outputs"
 
+    # Optional immutable reference-only display pack; no inference or clinical gate.
+    VASCULAI_REFERENCE_PROFILE_DIR: str | None = None
+
     # Optional model runtime; normal APIs remain available without PyTorch/weights.
     VASCULAI_MODEL_CHECKPOINT: str | None = None
     VASCULAI_MODEL_THRESHOLD: float = Field(default=0.70, ge=0, le=1, allow_inf_nan=False)
