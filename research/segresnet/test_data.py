@@ -57,6 +57,14 @@ class CacheTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ZIP_STORED"):
             store.array("Training", "401", "image")
 
+    def test_prefixed_archive_preserves_exact_memory_mapped_arrays(self):
+        archive = self.archive(zipfile.ZIP_STORED)
+        wrapped = self.root / "cache.vascuai"
+        wrapped.write_bytes(b"VASCUAI_CACHE_ZIP_STORED_V1\n" + archive.read_bytes())
+        store = CacheStore(wrapped)
+        np.testing.assert_array_equal(store.array("Training", "401", "image"), self.image)
+        np.testing.assert_array_equal(store.array("Training", "401", "mask"), self.mask)
+
     def test_object_payload_is_refused(self):
         np.save(self.root / "Training/401/image.npy", np.array([{"unsafe": True}], dtype=object))
         store = CacheStore(self.archive(zipfile.ZIP_STORED))
