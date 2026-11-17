@@ -49,7 +49,7 @@ function Profile({ data }) {
 export default function ReferenceProfiles() {
   const remote = useRemote(loadReferenceProfiles);
   return <AppShell><PageHeader eyebrow="REFERENCE RESEARCH" title="Reference diameter profiles" description="Three fixed Split-4 Training cases; supplied annotations only." />
-    <div className="notice" role="note"><strong>{REFERENCE_NOTICE}</strong></div>
+    <div className="card" role="note"><p><strong>{REFERENCE_NOTICE}</strong></p></div>
     {remote.loading ? <Loading label="Checking approved reference evidence…" /> : remote.error ? <ErrorState error={remote.error} retry={remote.reload} /> : <Profile data={remote.data} />}
   </AppShell>;
 }

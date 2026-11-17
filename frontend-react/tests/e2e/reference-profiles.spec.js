@@ -10,6 +10,9 @@ test('reference display rejects forged numeric evidence before plotting', async 
   await expect(page.getByRole('note')).toContainText('reference-derived research measurement, not validated');
   await expect(page.getByRole('alert')).toContainText('artifact identity differs');
   await expect(page.locator('canvas')).toHaveCount(0);
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.getByRole('note')).toBeVisible();
+  await expect(page.getByRole('note')).toContainText('reference-derived research measurement, not validated');
 });
 
 test('reference display missing pack remains an explicit unavailable state', async ({ page }) => {
