@@ -73,7 +73,7 @@ Get-FileHash -LiteralPath $env:VASCULAI_MODEL_CHECKPOINT -Algorithm SHA256
 ```
 
 Fresh installations apply the repository migration chain to head (currently
-0009_evaluations); see the [backend setup guide](../../../README.md).
+0010_case_reviews); see the [backend setup guide](../../../README.md).
 Existing databases require a reviewed backup and separately approved migration.
 Downgrades can permanently delete segmentation/evaluation history; they are not a
 default rollback. This guide does not attest to any operator's installed revision.

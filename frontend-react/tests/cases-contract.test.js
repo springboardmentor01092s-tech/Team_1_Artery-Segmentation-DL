@@ -15,8 +15,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  toCase, fromCaseForm, fromCaseUpdateForm, createCasesApi,
+  toCase, fromCaseForm, fromCaseUpdateForm, createCasesApi, toCaseWorkflow,
 } from '../src/api/cases-contract.js';
+import { workflowFixture } from './case-workflow-fixtures.js';
 import {
   toPatient, fromPatientForm, createPatientsApi,
 } from '../src/api/patients-contract.js';
@@ -47,6 +48,32 @@ test('toCase sets hasImage=true when image_path is a non-null string', () => {
     modality: null, region: null, scan_date: null, age_years: null, sex: null, notes: null,
   };
   assert.equal(toCase(raw).hasImage, true);
+});
+
+test('workflow adapter accepts bound research decisions and legitimate zero thresholds', () => {
+  const data=workflowFixture({reviewed:true});data.model_analysis.run.threshold=0;data.review.threshold=0;data.review_history[0].threshold=0;
+  assert.equal(toCaseWorkflow(data,1).caseStatus,'Complete');
+  assert.equal(toCaseWorkflow(workflowFixture(),1).caseStatus,'Awaiting review');
+  assert.equal(toCaseWorkflow(workflowFixture({reviewed:true,outcome:'changes_requested'}),1).caseStatus,'Changes requested');
+  assert.equal(toCase({status:'awaiting_review'}).status,'Awaiting review');
+  assert.equal(toCase({status:'changes_requested'}).status,'Changes requested');
+});
+for (const [label,change] of [
+  ['wrong case',d=>{d.case_id=2;}],['forged completion',d=>{d.case_status='complete';}],
+  ['clinical claim',d=>{d.clinical_validation=true;}],['forged current',d=>{d.review.current=false;}],
+  ['different run',d=>{d.review.segmentation_result_id='other';}],['different mask',d=>{d.review.mask_sha256='f'.repeat(64);}],
+  ['different threshold',d=>{d.review.threshold=.5;}],['forged reviewer',d=>{d.review.reviewer_role='Researcher';}],
+]) test(`workflow adapter fails closed for ${label}`,()=>{
+  const data=workflowFixture({reviewed:label!=='forged completion'});change(data);
+  assert.throws(()=>toCaseWorkflow(data,1),/inconsistent/);
+});
+test('case workflow API uses server review identity instead of supplied reviewer metadata',async()=>{
+  const calls=[],data=workflowFixture();
+  const api=createCasesApi({get:async url=>{calls.push(['GET',url]);return {data};},post:async(url,body)=>{calls.push(['POST',url,body]);return {data:workflowFixture({reviewed:true})};}});
+  assert.equal((await api.workflow(1)).caseStatus,'Awaiting review');
+  const request={segmentation_result_id:data.model_analysis.run.segmentation_result_id,outcome:'accepted_for_research',note:null,acknowledge_research_only:true};
+  assert.equal((await api.review(1,request)).caseStatus,'Complete');
+  assert.deepEqual(calls,[['GET','/cases/1/workflow'],['POST','/cases/1/reviews',request]]);
 });
 
 test('toCase title-cases lowercase backend status values', () => {

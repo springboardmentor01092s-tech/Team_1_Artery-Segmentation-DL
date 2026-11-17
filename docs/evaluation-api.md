@@ -8,6 +8,24 @@ verify the checkpoint weights or the dataset split workbook.
 
 ## Storage and authorization
 
+The React evaluation workspace (`/evaluation`) reads imported records; it never
+starts evaluation or creates case/model records. `/models/compare` compares
+selected recorded evaluations. Empty lists mean no accessible imports, not zero
+performance. Macro metrics, per-metric denominators, exclusions, pooled micro
+metrics and imported historical run references remain distinct. Stenosis section
+views explicitly report unavailable measurements without a validated gate.
+
+`GET /api/v1/evaluations?limit=20&offset=0` discovers accessible imported
+evaluations. The response contains `items` (identity, metadata and case IDs),
+`limit`, `offset`, `next_offset` and `offset_limit_reached`. Bounds are 1–100
+records and offsets 0–1,000,000. Ordering is ascending `(created_at,id)`.
+The existing case-access SQL scope filters **before** pagination; every member
+and the look-ahead record are rechecked against the protected case lookup and
+header/membership digest. Hidden records do not affect continuation metadata.
+No global total, metrics, case payloads or skipped IDs are added to discovery.
+Continuations beyond the accepted bound are unavailable with an explicit flag.
+This is an additive read route and requires no schema migration beyond 0009.
+
 The prior backend has case-volume records but no generic evaluation-file or
 model registry. Migration `0009_evaluations` adds five tables: stored evaluation
 artifacts, model identities, training-run references, evaluations, and evaluation

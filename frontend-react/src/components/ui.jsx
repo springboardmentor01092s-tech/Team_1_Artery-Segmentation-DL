@@ -62,7 +62,8 @@ export function Loading({ label = "Loading workspace…" }) {
 }
 export function StatusBadge({ status }) {
   const style =
-    { Complete: "green", Processing: "blue", Pending: "yellow", Failed: "red" }[
+    { Complete: "green", Processing: "blue", Pending: "yellow", Failed: "red",
+      "Awaiting review": "blue", "Changes requested": "yellow", Unverified: "gray" }[
       status
     ] || "gray";
   return (

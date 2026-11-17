@@ -163,7 +163,7 @@ export default function Landing() {
               [
                 "03",
                 "Prepare for analysis",
-                "Review input readiness. Model inference and 3D viewing require additional integration.",
+                "Review input readiness. Interactive 3D viewing uses saved segmentation outputs; new inference requires a configured runtime.",
               ],
               [
                 "04",

@@ -226,6 +226,7 @@ export default function AdminUsers() {
                         >
                           <select
                             aria-label={`Role for ${u.name}`}
+                            disabled={busy}
                             className="form-select"
                             style={{
                               padding: "5px 10px",
@@ -248,6 +249,8 @@ export default function AdminUsers() {
                           </button>
                           <button
                             className="btn btn-ghost btn-sm"
+                            aria-label="Cancel role change"
+                            disabled={busy}
                             onClick={() => setEditId(null)}
                           >
                             ✕
@@ -269,6 +272,7 @@ export default function AdminUsers() {
                           <button
                             className="btn btn-ghost btn-sm"
                             id={`edit-role-${u.id}-btn`}
+                            disabled={busy}
                             onClick={() => {
                               setEditId(u.id);
                               setEditRole(u.role);
@@ -297,6 +301,7 @@ export default function AdminUsers() {
                           <button
                             className="btn btn-danger btn-sm"
                             id={`deactivate-${u.id}-btn`}
+                            disabled={busy}
                             onClick={() => setConfirm(u)}
                           >
                             <UserX size={13} /> Deactivate

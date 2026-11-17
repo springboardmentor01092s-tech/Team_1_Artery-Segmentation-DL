@@ -29,6 +29,8 @@ import { useCase } from "../hooks/useCase";
 import { casesApi } from "../api/cases";
 import { useAuth } from "../context/AuthContext";
 import { MODALITIES, REGIONS } from "../constants/case-options";
+import CaseWorkflow from '../components/CaseWorkflow';
+import { useCaseWorkflow } from '../hooks/useCaseWorkflow';
 
 export function CaseTabs({ id }) {
   return (
@@ -56,6 +58,7 @@ export default function CaseDetail() {
   const { id } = useParams();
   const { isRole } = useAuth();
   const { data: item, loading, error, reload } = useCase();
+  const workflow = useCaseWorkflow(id);
   const [editing, setEditing] = useState(false);
   const [uploadSaved, setUploadSaved] = useState(false);
   const metadataLoader = useCallback(async () => {
@@ -74,6 +77,7 @@ export default function CaseDetail() {
     setUploadSaved(true);
     reload();
     meta.reload();
+    workflow.reload();
   }
   if (loading)
     return (
@@ -103,7 +107,7 @@ export default function CaseDetail() {
           <FileText size={14} />
           Case summary
         </Link>
-        <StatusBadge status={item.status} />
+        <StatusBadge status={workflow.data?.caseStatus || 'Unverified'} />
       </PageHeader>
       <CaseTabs id={id} />
       {uploadSaved && (
@@ -117,7 +121,7 @@ export default function CaseDetail() {
             title="Study intake"
             description="Upload progress and input availability"
           >
-            <div className="pipeline">
+            <div className="pipeline" role="list" aria-label="Case progress">
               {[
                 "Case created",
                 "Study uploaded",
@@ -126,13 +130,17 @@ export default function CaseDetail() {
                 "Review",
               ].map((s, i) => (
                 <div
-                  className={`pipeline-stage${i === 0 || (i === 1 && (item.hasImage || item.hasVolume)) || (i === 2 && meta.data?.some((m) => m.data)) ? " done" : ""}`}
+                  className={`pipeline-stage${i === 0 || (i === 1 && (item.hasImage || item.hasVolume)) || (i === 2 && meta.data?.some((m) => m.data)) || (i === 3 && workflow.data?.model_analysis.available) || (i === 4 && workflow.data?.review?.current) ? " done" : ""}`}
+                  role="listitem"
+                  aria-label={`${s}: ${i === 0 || (i === 1 && (item.hasImage || item.hasVolume)) || (i === 2 && meta.data?.some((m) => m.data)) || (i === 3 && workflow.data?.model_analysis.available) || (i === 4 && workflow.data?.review?.current) ? 'complete' : 'not complete'}`}
                   key={s}
                 >
                   <span>
                     {i === 0 ||
                     (i === 1 && (item.hasImage || item.hasVolume)) ||
-                    (i === 2 && meta.data?.some((m) => m.data)) ? (
+                    (i === 2 && meta.data?.some((m) => m.data)) ||
+                    (i === 3 && workflow.data?.model_analysis.available) ||
+                    (i === 4 && workflow.data?.review?.current) ? (
                       <Check size={12} />
                     ) : (
                       String(i + 1).padStart(2, "0")
@@ -198,6 +206,8 @@ export default function CaseDetail() {
           </Panel>
         </div>
         <div className="stack">
+          <CaseWorkflow key={id} caseId={id} workflow={workflow} canReview={isRole('Clinician', 'Admin')}
+            onRecorded={() => { workflow.reload(); reload(); }}/>
           <Panel
             title="Case record"
             action={
@@ -413,6 +423,7 @@ function CaseEdit({ item, onSaved, onCancel }) {
 }
 export function CaseHistory() {
   const { id } = useParams();
+  const workflow = useCaseWorkflow(id);
   const { data: item, loading, error, reload } = useCase();
   const { data: volume } = useRemote(
     useCallback(() => casesApi.getVolumeMetadata(id), [id]),
@@ -474,6 +485,7 @@ export function CaseHistory() {
               <Link className="btn btn-ghost" to={`/cases/${id}/analysis`}>View segmentation history</Link>
             </EmptyState>
           </Panel>
+          <CaseWorkflow caseId={id} workflow={workflow}/>
         </div>
       )}
     </AppShell>

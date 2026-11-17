@@ -40,11 +40,11 @@ test('opt-in supplied validation volume: orthogonal and actual 3D mask resource 
     await page.getByRole('button',{name:`View CT + Segmentation for run ${id}`,exact:true}).click();
     await expect(page.getByText(/Voxel spacing \(original axes\):/)).toBeVisible({timeout:120_000});
     const readyMilliseconds = Date.now()-started;
-    await page.screenshot({path:'test-results/validation-851-slices.png',fullPage:true});
+    await page.screenshot({path:test.info().outputPath('validation-851-slices.png'),fullPage:true});
     const ortho = await cdp.send('Runtime.getHeapUsage');
     await page.getByLabel('View',{exact:true}).selectOption('mask3d');
     await page.getByRole('button',{name:'Rotate 3D right'}).click();
-    await page.getByRole('img',{name:/CT slices/}).screenshot({path:'test-results/validation-851-mask-3d.png'});
+    await page.getByRole('img',{name:/CT slices/}).screenshot({path:test.info().outputPath('validation-851-mask-3d.png')});
     const threeD = await cdp.send('Runtime.getHeapUsage');
     const capabilities = await page.getByRole('img',{name:/CT slices/}).evaluate(canvas => {
       const gl = canvas.getContext('webgl2');
@@ -60,7 +60,7 @@ test('opt-in supplied validation volume: orthogonal and actual 3D mask resource 
     await cdp.send('HeapProfiler.collectGarbage');
     const closed = await cdp.send('Runtime.getHeapUsage');
     const {writeFile} = await import('node:fs/promises');
-    await writeFile('test-results/validation-851-viewer-resources.json',JSON.stringify({
+    await writeFile(test.info().outputPath('validation-851-viewer-resources.json'),JSON.stringify({
       shape:metadata.shape,checkpoint_sha256:metadata.checkpoint_sha256,
       readyMilliseconds,baseline,ortho,threeD,closed,samples,capabilities,
       note:'Browser heap/backing storage samples; GPU memory is not directly exposed. Isolated HTTP fixtures serve original de-identified validation artifacts; this is not a live application-database run.'

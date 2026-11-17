@@ -144,16 +144,22 @@ export default function Help() {
               protocol.
             </p>
             <p>
-              Segmentation evaluation may include Dice, IoU, precision, recall,
-              Hausdorff distance, and surface distance. Detection and
-              classification metrics belong in separate evaluations. No such
-              scores are available from the current API.
+              Imported offline segmentation evaluations provide Dice, IoU,
+              precision and recall when supported by their recorded evidence.
+              Headline metrics are macro averages across cases; pooled micro
+              metrics are labelled separately when confusion counts are available.
+              Missing metrics remain unavailable, not zero. Distance metrics are
+              not supplied by this evaluation API. Stenosis detection and
+              classification require separate evaluation evidence.
             </p>
             <p>
-              Dataset registration, train / validation / test manifests, model
-              registry, training jobs, and evaluation runs are not connected.
-              Saved case segmentation runs record their model and input checksums,
-              threshold, preprocessing configuration, and creation time.
+              Open Model evaluation to inspect imported case results, compare
+              evaluations with identical case sets, and review recorded model-run
+              references. These historical records are not a live training runner
+              or serving registry. Dataset registration, a serving model registry
+              and training-job controls are not connected. Saved case segmentation
+              runs record their model and input checksums, threshold, preprocessing
+              configuration, and creation time.
             </p>
           </section>
           <section className="help-section" id="exports">

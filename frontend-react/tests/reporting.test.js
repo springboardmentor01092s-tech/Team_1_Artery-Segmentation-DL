@@ -1,8 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createStenosisReportingApi,validateSummary,validateReport,validateIndex} from '../src/api/stenosis-reporting-contract.js';
-import {reportJsonBlob} from '../src/lib/exports.js';
+import {downloadRecords,reportJsonBlob,downloadCaseWorkflow} from '../src/lib/exports.js';
+import {workflowFixture} from './case-workflow-fixtures.js';
 import {summaryFixture,indexFixture,reportFixture} from './reporting-fixtures.js';
+import {loadExperimentalFixture} from './experimental-candidates-fixtures.js';
+import {validateExperimentalPreview} from '../src/lib/experimental-candidates.js';
+
+for (const field of ['reference_diameter','minimum_lumen_diameter','percentage_narrowing']) test(`report rejects unvalidated numeric ${field} before print or JSON presentation`, async () => {
+  const report = await reportFixture();
+  report.result.result.lesions[0].measurements[field] = {value:0,unit:field==='percentage_narrowing'?'percent':'mm',
+    unavailable_reason:null,method_id:'synthetic-test-only',method_version:'v1',definition:'Negative gate bypass fixture'};
+  await assert.rejects(validateReport(report,1,report.analysis.analysis_id), /validated quantitative/);
+});
 
 test('server-derived zero and populated summaries preserve unavailable metrics',()=>{
   for(const populated of [false,true]){const data=summaryFixture({populated});assert.equal(validateSummary(data),data);assert.equal(data.severity_distribution,null);}
@@ -52,4 +62,204 @@ test('unavailable measurements preserve independently optional method metadata',
     measurement[field]='invalid method with spaces';
     await assert.rejects(validateReport(report,1,report.analysis.analysis_id));
   }
+});
+
+function unbackedMeasurement(field, value = 37) {
+  return {value,unit:field==='percentage_narrowing'?'percent':'mm',unavailable_reason:null,
+    method_id:'synthetic-negative-export',method_version:'v1',definition:'Unvalidated synthetic export fixture'};
+}
+
+for (const field of ['reference_diameter','minimum_lumen_diameter','percentage_narrowing']) {
+  for (const value of [0,37]) test(`direct JSON export rejects unbacked ${field}=${value} without mutating input`,async()=>{
+    const report=await reportFixture();
+    report.result.result.lesions[0].measurements[field]=unbackedMeasurement(field,value);
+    const before=structuredClone(report);
+    assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+    assert.deepEqual(report,before);
+  });
+}
+
+for (const claim of ['flag','id','hash','all']) test(`direct JSON export rejects forged ${claim} claims`,async()=>{
+  const report=await reportFixture(),measurement=unbackedMeasurement('percentage_narrowing');
+  if (claim==='flag'||claim==='all') measurement.validated=true;
+  measurement.validation_gate={
+    gate_id:claim==='id'?'__proto__':'synthetic-unregistered',gate_version:'v1',
+    evidence_sha256:'a'.repeat(64),source_sha256:report.result.result.provenance.source.source_sha256,
+    analysis_method_id:report.result.result.provenance.method_id,
+    analysis_method_version:report.result.result.provenance.method_version,checkpoint_sha256:null,
+    validated:true,
+  };
+  report.result.result.lesions[0].measurements.percentage_narrowing=measurement;
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+});
+
+for (const shape of ['raw-result','response','nested-report','array']) test(`direct JSON export protects ${shape} measurements`,async()=>{
+  const report=await reportFixture(),response=report.result;
+  response.result.lesions.at(-1).measurements.minimum_lumen_diameter=unbackedMeasurement('minimum_lumen_diameter',0);
+  if (shape==='raw-result') report.result=response.result;
+  if (shape==='nested-report') report.result={cached:{report:{result:response}}};
+  if (shape==='array') report.result={history:[{result:null},{result:response}]};
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+});
+
+test('JSON export rechecks a cached report mutated after successful API validation',async()=>{
+  const report=await reportFixture();
+  await validateReport(report,1,report.analysis.analysis_id);
+  report.result.result.lesions[0].measurements.percentage_narrowing.value=37;
+  const before=structuredClone(report);
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+  assert.deepEqual(report,before);
+});
+
+test('JSON export preserves null measurements, reasons and the original report',async()=>{
+  const report=await reportFixture(),before=structuredClone(report);
+  const blob=reportJsonBlob(report),body=JSON.parse(await blob.text());
+  assert.equal(blob.type,'application/json;charset=utf-8');
+  assert.deepEqual(body,before);
+  assert.deepEqual(report,before);
+  assert.equal(body.result.result.lesions[0].measurements.percentage_narrowing.value,null);
+});
+
+test('unavailable reports with no result remain exportable',async()=>{
+  const report=await reportFixture({state:'failed'});
+  assert.deepEqual(JSON.parse(await reportJsonBlob(report).text()),report);
+});
+
+test('JSON export preserves segmentation/evaluation zeros and unrelated percentages',async()=>{
+  const report=await reportFixture();
+  report.result={segmentation:{metrics:{dice:0,iou:0,precision:0,recall:0}},
+    evaluations:[{macro:{dice:0,iou:0,precision:0,recall:0},pooled:{tp:0,fp:0,fn:0}}],
+    measurements:{percentage_change:0},percentage:0,percentage_narrowing:0};
+  assert.deepEqual(JSON.parse(await reportJsonBlob(report).text()),report);
+});
+
+test('ordinary unrelated JSON retains the existing allowlist and formatting',async()=>{
+  const report={schema_version:'1.0',document_type:'unrelated-synthetic',generated_at:'2026-11-12T00:00:00Z',
+    case:{case_id:0},analysis:{duration:0},report_state:'empty',unavailable_reason:null,
+    result:{count:0,percentage:37,items:[false,null,'example']},explanations:null,limitations:[]};
+  const before=structuredClone(report);
+  assert.equal(await reportJsonBlob(report).text(),JSON.stringify(before,null,2));
+  assert.deepEqual(report,before);
+});
+
+test('JSON export validates serialized toJSON output rather than a different source object',async()=>{
+  const report=await reportFixture(),lesion=report.result.result.lesions[0];
+  lesion.measurements.percentage_narrowing.toJSON=()=>unbackedMeasurement('percentage_narrowing');
+  assert.throws(()=>reportJsonBlob(report),/validated quantitative/);
+});
+
+test('JSON export checks and emits the same snapshot without rereading getters',async()=>{
+  const report=await reportFixture(),measurement=report.result.result.lesions[0].measurements.percentage_narrowing;
+  let reads=0;
+  Object.defineProperty(measurement,'value',{enumerable:true,get:()=>++reads===1?null:37});
+  const body=JSON.parse(await reportJsonBlob(report).text());
+  assert.equal(reads,1);
+  assert.equal(body.result.result.lesions[0].measurements.percentage_narrowing.value,null);
+});
+
+for (const value of [NaN,Infinity,-Infinity]) test(`JSON export does not coerce ${value} into a valid unavailable measurement`,async()=>{
+  const report=await reportFixture();
+  report.result.result.lesions[0].measurements.percentage_narrowing=unbackedMeasurement('percentage_narrowing',value);
+  assert.throws(()=>reportJsonBlob(report),/explicit reason/);
+});
+
+function captureDownloads(t) {
+  const blobs=[],links=[],descriptor=Object.getOwnPropertyDescriptor(globalThis,'document');
+  t.mock.method(URL,'createObjectURL',blob=>{blobs.push(blob);return 'blob:synthetic-export';});
+  t.mock.method(URL,'revokeObjectURL',()=>{});
+  t.mock.method(globalThis,'setTimeout',callback=>{callback();return 0;});
+  Object.defineProperty(globalThis,'document',{configurable:true,value:{createElement:()=>{
+    const link={click(){links.push(this);}};return link;
+  }}});
+  t.after(()=>{if(descriptor)Object.defineProperty(globalThis,'document',descriptor);else delete globalThis.document;});
+  return {blobs,links};
+}
+
+test('research workflow download retains bound reviewer provenance without mutation or clinical claims',async t=>{
+  const {blobs,links}=captureDownloads(t),data=workflowFixture({reviewed:true}),before=structuredClone(data);
+  data.private_path='must not export';data.review.private_path='must not export';
+  const input=structuredClone(data);
+  downloadCaseWorkflow(data);
+  const body=JSON.parse(await blobs[0].text());
+  assert.equal(links.length,1);assert.equal(body.document_type,'research_case_workflow');
+  assert.equal(body.clinical_validation,false);assert.equal(body.workflow.review.reviewer_id,1);
+  assert.equal(body.workflow.review.scope,'research_workflow_v1');assert.deepEqual(data,input);
+  assert.equal(body.workflow.private_path,undefined);assert.equal(body.workflow.review.private_path,undefined);
+  assert.equal(body.workflow.review.id,before.review.id);
+});
+test('workflow export validates serialized snapshot claims before creating a Blob',t=>{
+  const {blobs}=captureDownloads(t),data=workflowFixture();
+  data.toJSON=()=>({...workflowFixture(),clinical_validation:true});
+  assert.throws(()=>downloadCaseWorkflow(data),/inconsistent/);assert.equal(blobs.length,0);
+});
+for(const value of [0,37])test(`workflow JSON export also refuses unbacked stenosis ${value} before any Blob`,async t=>{
+  const {blobs,links}=captureDownloads(t),report=await reportFixture(),data=workflowFixture();
+  report.result.result.lesions[0].measurements.percentage_narrowing=unbackedMeasurement('percentage_narrowing',value);
+  data.cached=report;
+  assert.throws(()=>downloadCaseWorkflow(data),/validated quantitative/);
+  assert.equal(blobs.length,0);assert.equal(links.length,0);
+});
+
+test('alternate case JSON download enforces the same nested measurement guard before creating a download',async t=>{
+  const {blobs,links}=captureDownloads(t),report=await reportFixture();
+  report.result.result.lesions[0].measurements.percentage_narrowing=unbackedMeasurement('percentage_narrowing');
+  const items=[{id:1,notes:{cached:report}}],before=structuredClone(items);
+  assert.throws(()=>downloadRecords(items,'json'),/validated quantitative/);
+  assert.deepEqual(blobs,[]);
+  assert.deepEqual(links,[]);
+  assert.deepEqual(items,before);
+});
+
+test('ordinary case JSON download preserves zero values, allowlisting and input',async t=>{
+  const {blobs,links}=captureDownloads(t),items=[{id:1,caseCode:'SYNTHETIC-CASE',age:0,notes:'Synthetic metadata only',private_path:'must not export'}];
+  const before=structuredClone(items);
+  downloadRecords(items,'json');
+  assert.equal(links.length,1);
+  const body=JSON.parse(await blobs[0].text());
+  assert.equal(body.document_type,'research_case_metadata');
+  assert.equal(body.cases[0].age_years,0);
+  assert.equal(body.cases[0].notes,items[0].notes);
+  assert.equal(body.cases[0].private_path,undefined);
+  assert.deepEqual(items,before);
+});
+
+for (const wrapper of ['result','notes-array','case-metadata','candidate-only','serialized-wrapper']) test(`ordinary report JSON refuses experimental ${wrapper} before Blob creation`,async t=>{
+  const {preview}=await loadExperimentalFixture(),report=await reportFixture();
+  if(wrapper==='result')report.result=preview;
+  if(wrapper==='notes-array')report.result={retained:{notes:[{metadata:{preview}}]}};
+  if(wrapper==='case-metadata')report.case.metadata={preview};
+  if(wrapper==='candidate-only')report.result={items:[preview.candidates[0]]};
+  if(wrapper==='serialized-wrapper')report.result={toJSON:()=>({preview})};
+  const before=wrapper==='serialized-wrapper'?null:structuredClone(report);
+  let blobs=0;
+  t.mock.method(globalThis,'Blob',function ForbiddenBlob(){blobs++;throw new Error('Blob must not be created');});
+  assert.throws(()=>reportJsonBlob(report),/Experimental candidate previews cannot be included in ordinary reports or metadata exports/);
+  assert.equal(blobs,0);
+  if(before)assert.deepEqual(report,before);
+});
+
+for (const wrapper of ['preview','metadata','notes-array','candidate-only']) test(`ordinary case metadata JSON refuses experimental ${wrapper} before Blob/URL/download`,async t=>{
+  const {preview}=await loadExperimentalFixture(),{blobs,links}=captureDownloads(t);
+  const notes=wrapper==='preview'?preview:wrapper==='metadata'?{metadata:{preview}}:wrapper==='candidate-only'?[preview.candidates[0]]:{notes:[{preview}]};
+  const items=[{id:1,caseCode:'SYNTHETIC-ONLY',notes}],before=structuredClone(items);
+  let constructors=0;
+  t.mock.method(globalThis,'Blob',function ForbiddenBlob(){constructors++;throw new Error('Blob must not be created');});
+  assert.throws(()=>downloadRecords(items,'json'),/Experimental candidate previews cannot be included in ordinary reports or metadata exports/);
+  assert.equal(constructors,0);assert.deepEqual(blobs,[]);assert.deepEqual(links,[]);assert.deepEqual(items,before);
+});
+
+test('standalone research-preview JSON remains usable without entering ordinary exports',async()=>{
+  const f=await loadExperimentalFixture(),before=structuredClone(f.preview);
+  const standalone=JSON.parse(JSON.stringify(f.preview,null,2));
+  assert.equal(standalone.schema_version,'experimental-candidates/1.0');
+  assert.ok(standalone.candidates.length>0);
+  assert.deepEqual(await validateExperimentalPreview(standalone,f.geometry,f.segmentation,f.verifiedMask),before);
+  assert.deepEqual(f.preview,before);
+});
+
+test('ordinary JSON still preserves unrelated experimental wording and genuine evaluation zeros',async()=>{
+  const report=await reportFixture();
+  report.result={schema_version:'ordinary-metadata/1.0',kind:'experimental_candidate_note',percentage:0,
+    metrics:{dice:0,iou:0,precision:0,recall:0},notes:['experimental candidate previews are unavailable']};
+  assert.deepEqual(JSON.parse(await reportJsonBlob(report).text()),report);
 });

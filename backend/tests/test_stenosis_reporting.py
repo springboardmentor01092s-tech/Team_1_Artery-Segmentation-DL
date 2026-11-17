@@ -72,21 +72,25 @@ def test_missing_result_is_integrity_error_not_zero_findings(client,db,volume,ru
     assert response.json()['report_state']=='integrity_error' and response.json()['result'] is None
 
 
-def test_available_zero_measurement_labels_and_explanation_metadata_counts(client,db,volume,runtime,tmp_path):
+def test_unvalidated_zero_rejected_but_labels_and_explanation_metadata_counts_preserved(client,db,volume,runtime,tmp_path):
     job,token,payload=claimed(db,volume,runtime)
     payload['lesions'][0]['measurements']['reference_diameter']={'value':0,'unit':'mm','unavailable_reason':None,'method_id':'synthetic','method_version':'1'}
+    with pytest.raises(HTTPException) as failure:
+        results.persist_completed_result(db,job.analysis_id,token,payload,runtime)
+    assert failure.value.detail['code']=='quantitative_gate_unavailable'
+    payload['lesions'][0]['measurements']['reference_diameter']={'value':None,'unit':'mm','unavailable_reason':{'code':'not_integrated','message':'No validated quantitative gate'}}
     payload['lesions'][0]['severity']={'category':'provider_label','unavailable_reason':None,'method_id':'synthetic','method_version':'1'}
     payload['lesions'][0]['vessel_label']='Supplied test anatomy'
     item=supplied(tmp_path,payload)
     results.persist_completed_result(db,job.analysis_id,token,payload,binding(runtime,item),explanations=[item])
     value=get_summary(client,volume.headers)
-    assert value['measurements'][0]=={'field':'reference_diameter','available':1,'unavailable':1}
+    assert value['measurements'][0]=={'field':'reference_diameter','available':0,'unavailable':2}
     assert value['supplied_severity_labels']==1 and value['severity_distribution'] is None
     assert value['current']['explanation_artifacts']==value['current']['analyses_with_explanations']==1
     assert value['anatomy'][0]['label']=='Supplied test anatomy'
     result=client.get(endpoint(volume,job)+'/report',headers=volume.headers).json()
     lesion=next(item for item in result['result']['result']['lesions'] if item['lesion_id']==payload['lesions'][0]['lesion_id'])
-    assert lesion['measurements']['reference_diameter']['value']==0
+    assert lesion['measurements']['reference_diameter']['value'] is None
     assert len(result['explanations']['items'])==1
 
 
