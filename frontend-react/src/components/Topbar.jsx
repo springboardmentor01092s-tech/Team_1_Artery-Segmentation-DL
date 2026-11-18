@@ -53,7 +53,7 @@ export default function Topbar({ breadcrumbs = [], onMenu }) {
           <kbd>↵</kbd>
         </form>
         <Link to="/help" className="research-label">
-          Research use
+          For Research use
           <ArrowUpRight size={13} />
         </Link>
         <Link
