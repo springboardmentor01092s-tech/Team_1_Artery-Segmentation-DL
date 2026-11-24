@@ -4,13 +4,15 @@ import { ErrorState, Loading, Metadata, Panel } from "./ui";
 import { stenosisApi } from "../api/stenosis";
 import { useAnalysisTracker } from "../hooks/useAnalysisTracker";
 import ExplanationPanel from "./ExplanationPanel";
+import { measurementPresentation } from "../lib/quantitative-gate";
 
 const Viewer = lazy(() => import("./SegmentationViewer"));
 const neverPoll = () => false;
 
-function MeasurementDisplay({ name, measurement }) {
+function MeasurementDisplay({ name, measurement, provenance }) {
+  const presentation = measurementPresentation(measurement, provenance);
   return <div className="readiness-item"><div><strong>{name}</strong>
-    <p>{measurement.value === null ? `Unavailable: ${measurement.unavailable_reason.message}` : `${measurement.value} ${measurement.unit}`}</p>
+    <p>{presentation.text}</p>
     {(measurement.method_id || measurement.method_version) && <p className="text-xs">Method {measurement.method_id || 'Not supplied'} / {measurement.method_version || 'Version not supplied'}{measurement.definition ? ` · ${measurement.definition}` : ""}{measurement.reference_region ? ` · Reference: ${measurement.reference_region}` : ""}</p>}
   </div></div>;
 }
@@ -54,9 +56,9 @@ function CompletedResults({ caseId, analysisId }) {
           <Metadata items={[["Lesion ID", selected.lesion_id], ["Vessel ID", selected.vessel_id], ["Vessel label", selected.vessel_label], ["Anatomical location", selected.anatomical_location], ["Anatomical method/source", selected.anatomical_method],
             ["Original IJK voxel", selected.location?.voxel_indices.join(", ")], ["RAS position (mm)", selected.location?.world_coordinates.join(", ")], ["Original-array slice", selected.location?.slice_axis != null ? `axis ${selected.location.slice_axis}, index ${selected.location.slice_index}` : null]]} />
           {!selected.location && <p className="notice">Localization unavailable: {selected.localization_unavailable_reason.message}</p>}
-          <MeasurementDisplay name="Reference vessel diameter" measurement={selected.measurements.reference_diameter} />
-          <MeasurementDisplay name="Minimum lumen diameter" measurement={selected.measurements.minimum_lumen_diameter} />
-          <MeasurementDisplay name="Percentage narrowing" measurement={selected.measurements.percentage_narrowing} />
+          <MeasurementDisplay name="Reference vessel diameter" measurement={selected.measurements.reference_diameter} provenance={root.result.provenance} />
+          <MeasurementDisplay name="Minimum lumen diameter" measurement={selected.measurements.minimum_lumen_diameter} provenance={root.result.provenance} />
+          <MeasurementDisplay name="Percentage narrowing" measurement={selected.measurements.percentage_narrowing} provenance={root.result.provenance} />
           {new Set(Object.values(selected.measurements).filter(item => item.value !== null).map(item => `${item.method_id}/${item.method_version}`)).size > 1 && <p className="notice">Measurements use different methods; no combined interpretation is made.</p>}
           <p className="text-sm">Severity: {selected.severity.category || `Unavailable: ${selected.severity.unavailable_reason.message}`}{selected.severity.category ? ` (${selected.severity.method_id} / ${selected.severity.method_version})` : ""}</p>
           <p className="text-sm">Legacy explanation reference: {selected.explanation.artifact_id ? `A provider reference was supplied (${selected.explanation.method_id} / ${selected.explanation.method_version}); use the separately verified attribution panel below for renderable artifacts.` : `Unavailable: ${selected.explanation.unavailable_reason.message}`}</p>

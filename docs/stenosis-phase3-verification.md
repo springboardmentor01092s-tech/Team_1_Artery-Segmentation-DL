@@ -1,6 +1,6 @@
 # Milestone 3, Phase 3 — implementation and verification
 
-Date: 2026-10-31. Repository: `F:/Documents/artery_demo`.
+Date: 2026-10-31. Repository: `<REPOSITORY_ROOT>`.
 This records local implementation evidence; it is not a clinical validation report.
 
 ## A. Implementation summary
@@ -131,7 +131,7 @@ workspace bind mount and fresh data. Existing conftest creates/drops a random
 `vascuai_test_*` schema and temp uploads/outputs. The container and its anonymous
 volume were removed after verification. Application DB credentials were not used.
 
-Commands below were run from `F:/Documents/artery_demo/backend`. Environment was
+Commands below were run from `<REPOSITORY_ROOT>/backend`. Environment was
 set inside the short-lived Python process, never in application configuration.
 
 ```powershell
@@ -165,12 +165,12 @@ excluded to avoid running models. Training, real inference and production DB/
 deployment behavior were not verified. Existing backend auth, roles, patients,
 cases, uploads, segmentation storage/downloads and Phase-1/2 regressions passed.
 
-Frontend commands from `F:/Documents/artery_demo/frontend-react`:
+Frontend commands from `<REPOSITORY_ROOT>/frontend-react`:
 
 ```powershell
 npm test
 npm run lint
-npm run build -- --outDir C:/Users/vimzz/AppData/Local/Temp/vascuai-phase3-verification-xc4h725h/build-final
+npm run build -- --outDir <LOCAL_TOOL_PATH>
 ```
 
 Results: **167 unit tests passed**, zero failures/skips (23 new Phase-3 cases).
@@ -180,11 +180,11 @@ exits 0, 2098 modules, 3.15s; warnings about external output directory and exist
 large NiiVue/codec chunks. Build files are outside the repository.
 
 Browser commands from the fresh external directory
-`C:/Users/vimzz/AppData/Local/Temp/vascuai-phase3-verification-xc4h725h`:
+`<LOCAL_TOOL_PATH>`:
 
 ```powershell
-node F:/Documents/artery_demo/frontend-react/node_modules/@playwright/test/cli.js test --config C:/Users/vimzz/AppData/Local/Temp/vascuai-phase3-verification-xc4h725h/playwright.config.cjs stenosis-results.spec.js
-node F:/Documents/artery_demo/frontend-react/node_modules/@playwright/test/cli.js test --config C:/Users/vimzz/AppData/Local/Temp/vascuai-phase3-verification-xc4h725h/playwright.config.cjs stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js
+node <REPOSITORY_ROOT>/frontend-react/node_modules/@playwright/test/cli.js test --config <LOCAL_TOOL_PATH> stenosis-results.spec.js
+node <REPOSITORY_ROOT>/frontend-react/node_modules/@playwright/test/cli.js test --config <LOCAL_TOOL_PATH> stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js
 ```
 
 Results: new suite **11 passed**, zero failures/skips, 18.9s; full selected
@@ -240,7 +240,7 @@ byte-identical. Git HEAD alone does not include the earlier local phases.
 
 ### New files (18)
 
-Paths are relative to `F:/Documents/artery_demo`:
+Paths are relative to `<REPOSITORY_ROOT>`:
 
 ```text
 backend/app/models/stenosis_result.py

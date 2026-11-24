@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { segmentationApi } from '../api/segmentation';
 import { loadViewerPair } from '../lib/volume-loader';
-import { createVolumeViewer, graphicsCapabilities, releaseViewer } from '../lib/niivue-adapter';
+import { createVolumeViewer, graphicsCapabilities, nextCameraElevation, normalizeCameraElevation, releaseViewer } from '../lib/niivue-adapter';
 import { useLesionLayer } from '../hooks/useLesionLayer';
 import { useCandidateRegion } from '../hooks/useCandidateRegion';
 import { useExplanationLayer } from '../hooks/useExplanationLayer';
 import { attributionLegend, attributionPresentation, navigateToAttributionSlice } from '../lib/attribution';
+import ExperimentalCandidatePreview from './ExperimentalCandidatePreview';
+import AnnotationDraft from './AnnotationDraft';
 
 export default function SegmentationViewer(props) {
   const [attempt, setAttempt] = useState(0);
@@ -17,6 +19,8 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
   const heading = useRef(null);
   const instance = useRef(null);
   const sourceGeometry = useRef(null);
+  const experimentalLayer = useRef(null);
+  const [experimentalSession, setExperimentalSession] = useState(null);
   const imageUpdate = useRef(null);
   const [phase, setPhase] = useState('Checking browser and source provenance…');
   const [error, setError] = useState('');
@@ -83,13 +87,17 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
         if (!alive || controller.signal.aborted) return;
         setPhase('Preparing GPU textures and rendering slices…');
         sourceGeometry.current = pair.geometry;
+        // The viewer adapter releases pair.mask after constructing NVImage.
+        // Retain only the bounded experimental input before that ownership change.
+        const previewMask = pair.geometry.voxels <= 4_000_000 ? pair.mask : null;
         viewer = await createVolumeViewer(element, pair, value => { if (alive) { setLocation(value); lesionLocation(value); } }, controller.signal);
         if (!alive || controller.signal.aborted) { releaseViewer(viewer); return; }
         instance.current = viewer;
+        setExperimentalSession({viewer,geometry:pair.geometry,maskBuffer:previewMask,layer:experimentalLayer.current});
         const syncCamera = () => {
           if (alive && !controller.signal.aborted) setCamera({
             azimuth: viewer.scene.renderAzimuth,
-            elevation: viewer.scene.renderElevation,
+            elevation: normalizeCameraElevation(viewer.scene.renderElevation),
             zoom: viewer.scene.volScaleMultiplier,
           });
         };
@@ -165,7 +173,7 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
   function tilt(amount) {
     const viewer = instance.current;
     if (!viewer) return;
-    try { viewer.setRenderAzimuthElevation(viewer.scene.renderAzimuth, Math.max(-90, Math.min(90, viewer.scene.renderElevation + amount))); }
+    try { viewer.setRenderAzimuthElevation(viewer.scene.renderAzimuth, nextCameraElevation(viewer.scene.renderElevation, amount)); }
     catch { stopRendering(); }
   }
   function zoom(direction) {
@@ -191,15 +199,19 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
   return (
     <section className="volume-viewer" aria-label={`CT and segmentation viewer for run ${result.id}`}>
       <div className="volume-viewer-heading"><div><h2 ref={heading} tabIndex={-1}>CT + predicted segmentation</h2><p className="text-xs text-muted">Case {caseId} · Run {result.id.slice(0, 8)}</p></div><button className="btn btn-ghost btn-sm" onClick={onClose}>Close viewer</button></div>
-      <p className="notice">Experimental research visualization — not for diagnostic use. This baseline has substantial segmentation limitations. Magenta indicates predicted foreground; no clinical accuracy is implied.</p>
+      <p className="notice">Experimental research visualization — not for diagnostic use. Predictions can be incomplete or incorrect. Magenta indicates predicted foreground; no clinical accuracy is implied.</p>
       {phase && !error && <div role="status"><p>{phase}</p>{Object.entries(progress).map(([artifact, value]) => <p className="text-xs" key={artifact}>{artifact === 'source' ? 'CT' : 'Mask'}: {(value.loaded / 1024 ** 2).toFixed(1)} MiB{value.total ? ` / ${(value.total / 1024 ** 2).toFixed(1)} MiB` : ' received'}</p>)}</div>}
       {error && <div className="notice error" role="alert"><p>{error}</p><p>Original authenticated downloads remain available in history.</p><button className="btn btn-ghost btn-sm" onClick={onRetry}>Retry viewer</button></div>}
       <div className={`volume-canvas-container${!ready ? ' volume-canvas-loading' : ''}`}>
         <canvas ref={canvas} aria-label="CT slices with the matching binary segmentation overlay" tabIndex={0} role="img">Use the labelled slice controls to navigate. A WebGL2-capable browser is required.</canvas>
+        <div ref={experimentalLayer}/>
         {ready && localization && <div className="lesion-marker-layer" aria-label="Validated candidate locations">
           {lesionLayer.markers.map(marker => <button key={`${marker.id}-${marker.plane}`} className={`lesion-marker${marker.selected ? ' lesion-marker-selected' : ''}`} style={{ left: `${marker.x}%`, top: `${marker.y}%` }} title={`${marker.plane} · Candidate ${marker.id}`} aria-label={`Select ${marker.plane} candidate ${marker.id}`} aria-pressed={marker.selected} onClick={() => onLesionSelect?.(marker.id)} />)}
         </div>}
       </div>
+      {ready && experimentalSession && !localization && <AnnotationDraft key={`${result.id}-${result.metadata.source_sha256}`}
+        caseId={caseId} result={result} geometry={experimentalSession.geometry} location={location}/>}
+      {ready && experimentalSession && !localization && <ExperimentalCandidatePreview key={`research-preview:${result.id}-${result.metadata.source_sha256}`} {...experimentalSession} segmentation={result} location={location} view={view} onSlices={() => changeView('slices')}/>}
       {localization && <>
         <p className="text-xs">Point legend: cyan circle = supplied candidate; yellow ring = selected candidate. Magenta remains predicted artery, not stenosis. Points are shown only on their current 2D slices.</p>
         {lesionLayer.error && <p className="notice error" role="alert">{lesionLayer.error} The original CT display is retained.</p>}

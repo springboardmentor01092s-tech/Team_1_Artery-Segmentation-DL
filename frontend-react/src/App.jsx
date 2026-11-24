@@ -40,10 +40,10 @@ const ReportPreview = lazy(() =>
 const Alerts = lazy(() => import("./pages/Alerts"));
 const Research = lazy(() => import("./pages/Research"));
 const Evaluation = lazy(() =>
-  import("./pages/Research").then((m) => ({ default: m.Evaluation })),
+  import("./pages/Evaluations"),
 );
 const ModelComparison = lazy(() =>
-  import("./pages/Research").then((m) => ({ default: m.ModelComparison })),
+  import("./pages/Evaluations").then((m) => ({ default: m.ModelComparison })),
 );
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -51,6 +51,9 @@ const Security = lazy(() =>
   import("./pages/Settings").then((m) => ({ default: m.Security })),
 );
 const Help = lazy(() => import("./pages/Help"));
+const ReferenceProfiles = lazy(() => import("./pages/ReferenceProfiles"));
+const ReviewAssignments = lazy(() => import("./pages/ReviewAssignments"));
+const ReviewAdjudications = lazy(() => import("./pages/ReviewAdjudications"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AuditLogs = lazy(() =>
   import("./pages/admin/Operations").then((m) => ({ default: m.AuditLogs })),
@@ -83,6 +86,8 @@ function ErrorPage({ denied = false }) {
 export default function App() {
   const protectedPages = [
     ["/dashboard", () => <Dashboard />],
+    ["/review-assignments", () => <ReviewAssignments />, writers],
+    ["/review-adjudications", () => <ReviewAdjudications />, writers],
     ["/cases", () => <Cases />],
     ["/cases/new", () => <NewCase />, writers],
     ["/cases/:id", () => <CaseDetail />],
@@ -106,6 +111,7 @@ export default function App() {
     ["/models", () => <Research section="models" />, researchers],
     ["/models/compare", () => <ModelComparison />, researchers],
     ["/evaluation", () => <Evaluation />, researchers],
+    ["/research/reference-profiles", () => <ReferenceProfiles />, researchers],
     [
       "/evaluation/segmentation",
       () => <Evaluation initialTab="Segmentation" />,

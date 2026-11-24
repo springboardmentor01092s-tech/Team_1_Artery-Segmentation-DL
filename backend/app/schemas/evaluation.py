@@ -182,6 +182,14 @@ class EvaluationMembership(EvaluationIdentity):
     case_ids: list[int]
 
 
+class EvaluationIndex(StrictModel):
+    items: list[EvaluationMembership]
+    limit: int
+    offset: int
+    next_offset: int | None
+    offset_limit_reached: bool
+
+
 class MacroDenominator(StrictModel):
     defined_cases: int
     undefined_cases: int
@@ -190,6 +198,42 @@ class MacroDenominator(StrictModel):
 class CaseExclusion(StrictModel):
     case_id: int
     reason: str
+
+
+class SupplementalMetricValues(StrictModel):
+    voxel_accuracy: Score | None
+    specificity: Score | None
+    sensitivity: Score | None
+    f1_score: Score | None
+
+
+class SupplementalCaseMetrics(StrictModel):
+    case_id: int
+    included: bool
+    exclusion_reason: str | None
+    metrics: SupplementalMetricValues
+    unavailable_reasons: dict[str, str]
+
+
+class UnavailableSurfaceDistances(StrictModel):
+    status: Literal["unavailable_not_computed"]
+    hausdorff_distance: None = None
+    average_surface_distance: None = None
+    units: None = None
+    reason: str
+
+
+class SupplementalEvaluationMetrics(StrictModel):
+    version: Literal["confusion-derived/1.0"]
+    source: Literal["stored_case_confusion_counts"]
+    macro_metrics: SupplementalMetricValues
+    macro_denominators: dict[str, MacroDenominator]
+    pooled_micro_metrics: SupplementalMetricValues
+    pooled_unavailable_reasons: dict[str, str]
+    per_case: list[SupplementalCaseMetrics]
+    formulas: dict[str, str]
+    zero_denominator: Literal["null"]
+    surface_distances: UnavailableSurfaceDistances
 
 
 class EvaluationSummary(EvaluationMembership):
@@ -204,6 +248,7 @@ class EvaluationSummary(EvaluationMembership):
     metric_formulas: dict[str, str]
     zero_denominator: Literal["null"]
     undefined_macro_policy: str
+    supplemental_metrics: SupplementalEvaluationMetrics | None = None
 
 
 class EvaluationCases(EvaluationIdentity):
@@ -211,6 +256,7 @@ class EvaluationCases(EvaluationIdentity):
     metric_formulas: dict[str, str]
     undefined_macro_policy: str
     cases: list[CaseEvaluation]
+    supplemental_metrics: SupplementalEvaluationMetrics | None = None
 
 
 class EvaluationComparison(StrictModel):

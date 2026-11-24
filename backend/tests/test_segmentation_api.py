@@ -36,6 +36,36 @@ def seed(client, account):
     return case["id"], headers
 
 
+@pytest.mark.parametrize("role", ["Admin", "Clinician", "Researcher", "DataScientist"])
+def test_recipe_configuration_uses_existing_case_reader_policy(client, account, monkeypatch, role):
+    case_id, _ = seed(client, account)
+    _, headers = account(role)
+    monkeypatch.setattr(settings, "VASCULAI_MODEL_ARCHITECTURE", "segresnet-1mm-v1")
+    monkeypatch.setattr(settings, "VASCULAI_MODEL_CHECKPOINT", None)
+    url = f"/api/v1/cases/{case_id}/segmentation-config"
+    assert client.get(url).status_code == 401
+    response = client.get(url, headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {"architecture": "segresnet-1mm-v1", "default_threshold": .5,
+                               "threshold_adjustable": False, "status": "not_configured",
+                               "experimental": True, "clinical_validation": False}
+    assert client.get("/api/v1/cases/999999/segmentation-config", headers=headers).status_code == 404
+
+
+def test_historical_and_new_recipe_defaults_remain_separate(client, account, fake_runtime, monkeypatch):
+    case_id, headers = seed(client, account)
+    url = f"/api/v1/cases/{case_id}"
+    assert client.get(url + "/segmentation-config", headers=headers).json()["default_threshold"] == .7
+    assert client.post(url + "/segmentations", headers=headers, json={}).json()["metadata"]["threshold"] == .7
+    monkeypatch.setattr(settings, "VASCULAI_MODEL_ARCHITECTURE", "segresnet-1mm-v1")
+    assert client.post(url + "/segmentations", headers=headers, json={}).json()["metadata"]["threshold"] == .5
+    response = client.post(url + "/segmentations", headers=headers, json={"threshold": .7})
+    assert response.status_code == 400 and "threshold 0.5" in response.json()["detail"]
+    # Explicit legacy thresholds remain supported by the legacy operator.
+    monkeypatch.setattr(settings, "VASCULAI_MODEL_ARCHITECTURE", "smallunet3d")
+    assert client.post(url + "/segmentations", headers=headers, json={"threshold": 0}).json()["metadata"]["threshold"] == 0
+
+
 @pytest.fixture
 def fake_runtime(monkeypatch):
     monkeypatch.setattr(settings, "VASCULAI_MODEL_CHECKPOINT", "test-fixture-only")
@@ -129,8 +159,13 @@ def test_failed_runs_clean_outputs_and_do_not_persist(client, account, fake_runt
         return metadata
     monkeypatch.setattr(segmentation, "execute_inference", execute)
     if failure == "commit":
+        original_commit = Session.commit
         def fail_commit(self):
-            raise RuntimeError("test persistence failure")
+            # Fail the result persistence transaction, not the independent
+            # pre-access audit. Existing cleanup/result assertions remain intact.
+            if any(isinstance(item, SegmentationResult) for item in [*self.new, *self.identity_map.values()]):
+                raise RuntimeError("test persistence failure")
+            return original_commit(self)
         monkeypatch.setattr(Session, "commit", fail_commit)
     response = client.post(f"/api/v1/cases/{case_id}/segmentations", headers=headers, json={})
     assert response.status_code == (409 if failure == "replacement" else 500), response.text
@@ -521,8 +556,13 @@ def test_source_snapshot_closes_when_audit_commit_fails(client, account, fake_ru
         snapshots.append(snapshot)
         return snapshot
 
+    original_commit = Session.commit
     def fail_commit(self):
-        raise HTTPException(503, "Synthetic persistence failure")
+        # Exercise snapshot cleanup after the endpoint's audit fails, rather
+        # than failing the independent admission audit before a snapshot exists.
+        if any(isinstance(item, AuditEvent) and item.action == "case.segmentation_source_read" for item in self.new):
+            raise HTTPException(503, "Synthetic persistence failure")
+        return original_commit(self)
 
     monkeypatch.setattr(segmentation, "snapshot_source", track_snapshot)
     monkeypatch.setattr(Session, "commit", fail_commit)

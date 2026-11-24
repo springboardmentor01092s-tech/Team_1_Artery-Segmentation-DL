@@ -1,6 +1,6 @@
 # Milestone 3, Phase 6 — final integration and acceptance verification
 
-Date: 2026-10-31. Repository: `F:/Documents/artery_demo`.
+Date: 2026-10-31. Repository: `<REPOSITORY_ROOT>`.
 Scope: Phases 1–5 integration, isolated verification and confirmed defect fixes.
 This is not a clinical validation, production deployment or security certification.
 Historical phase test counts are not added to the new results below.
@@ -228,11 +228,11 @@ Environment: Windows, Python 3.14.7, Node 24.13.0, npm 11.6.2, installed Chrome
 156.0.8078.76, NiiVue 0.69.0, PostgreSQL 18.6 (cached official postgres:18 image).
 No package installation/upgrade. External verification directory:
 
-`C:\Users\vimzz\AppData\Local\Temp\vascuai-phase6-verification-dgd9gash`
+`<LOCAL_TOOL_PATH>`
 
 ### Backend / PostgreSQL integration
 
-Working directory `F:/Documents/artery_demo/backend`. Variables are process-local,
+Working directory `<REPOSITORY_ROOT>/backend`. Variables are process-local,
 not environment-file edits. The disposable container exposed port 52370 for this
 run; a later reproduction must use its own newly created test container/port.
 
@@ -241,12 +241,12 @@ run; a later reproduction must use its own newly created test container/port.
 import os, pytest
 from pathlib import Path
 from contextlib import redirect_stdout, redirect_stderr
-folder=Path(r'C:\Users\vimzz\AppData\Local\Temp\vascuai-phase6-verification-dgd9gash')
+folder=Path(r'<LOCAL_TOOL_PATH>')
 os.environ.update(
     TEST_DATABASE_URL='postgresql+psycopg://postgres@127.0.0.1:52370/vascuai_phase6_test',
     PYTEST_DISABLE_PLUGIN_AUTOLOAD='1', PYTHONDONTWRITEBYTECODE='1',
     VASCUAI_LIVE_ACCEPTANCE='1',
-    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH='C:/Program Files/Google/Chrome/Application/chrome.exe',
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH='<LOCAL_TOOL_PATH>',
     VASCUAI_ACCEPTANCE_OUTPUT=str(folder/'release-live'),
 )
 with (folder/'backend-acceptance.log').open('w',encoding='utf-8') as log, redirect_stdout(log), redirect_stderr(log):
@@ -293,13 +293,13 @@ single Python harness test, not added to the backend test total.
 
 ### Frontend unit/contracts, lint and build
 
-Working directory `F:/Documents/artery_demo/frontend-react`:
+Working directory `<REPOSITORY_ROOT>/frontend-react`:
 
 ```powershell
 node --test tests/reporting.test.js
 npm test
 npm run lint
-npm run build -- --outDir C:/Users/vimzz/AppData/Local/Temp/vascuai-phase6-verification-dgd9gash/build-acceptance
+npm run build -- --outDir <LOCAL_TOOL_PATH>
 ```
 
 Focused report contracts **21 passed** (117.4145 ms). Full final unit/contracts
@@ -317,7 +317,7 @@ adds a 10 s expect timeout, uses installed Chrome/SwiftShader and a fresh strict
 port 5192 Vite server (`reuseExistingServer=false`). No repository config changed.
 
 ```powershell
-node F:/Documents/artery_demo/frontend-react/node_modules/@playwright/test/cli.js test --config C:/Users/vimzz/AppData/Local/Temp/vascuai-phase6-verification-dgd9gash/playwright.config.cjs reporting.spec.js explanations.spec.js stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js stenosis-acceptance.spec.js
+node <REPOSITORY_ROOT>/frontend-react/node_modules/@playwright/test/cli.js test --config <LOCAL_TOOL_PATH> reporting.spec.js explanations.spec.js stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js stenosis-acceptance.spec.js
 ```
 
 Final result: **121 passed, 0 failed (2.2 min)**. These browser flows use API interception

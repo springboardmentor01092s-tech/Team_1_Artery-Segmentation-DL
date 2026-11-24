@@ -7,7 +7,7 @@ from app.core.roles import Role
 from app.models import User
 from app.routers.cases import AuthenticatedCaseReader, DatabaseSession
 from app.schemas.evaluation import (EvaluationImport, ArtifactResponse, EvaluationSummary, EvaluationCases,
-                                    EvaluationComparison, ModelRuns, StenosisEvaluationSections)
+                                    EvaluationComparison, EvaluationIndex, ModelRuns, StenosisEvaluationSections)
 from app.services import evaluations as service
 from app.services.audit import record_event
 
@@ -20,6 +20,14 @@ def finish(db, user, response, event):
     db.commit()
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
+
+
+@router.get("/evaluations", response_model=EvaluationIndex)
+def list_evaluations(current_user: AuthenticatedCaseReader, db: DatabaseSession, response: Response,
+                     limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=service.MAX_HISTORY_OFFSET)):
+    result = service.list_evaluations(db, limit=limit, offset=offset)
+    finish(db, current_user, response, "evaluation.index_read")
+    return result
 
 
 @router.post("/evaluations/artifacts", status_code=201, response_model=ArtifactResponse)

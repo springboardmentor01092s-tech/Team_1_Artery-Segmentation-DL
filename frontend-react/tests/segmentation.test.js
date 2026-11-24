@@ -6,6 +6,23 @@ import { segmentationEligibility, segmentationError, saveArtifact } from "../src
 
 const resultId = "12345678-1234-4567-890a-123456789abc";
 
+test('model configuration is explicit and cannot silently substitute a SegResNet threshold', async () => {
+  const config = { architecture: 'segresnet-1mm-v1', default_threshold: .5,
+    threshold_adjustable: false, status: 'configured_not_verified', experimental: true, clinical_validation: false };
+  let calls = 0;
+  const service = createSegmentationApi({ get: async url => {
+    calls++; assert.equal(url, '/cases/7/segmentation-config'); return { data: config };
+  } });
+  assert.equal(await service.config(7), config);
+  await assert.rejects(service.config('../8'), /case ID/);
+  assert.equal(calls, 1);
+  for (const change of [{ default_threshold: .7 }, { threshold_adjustable: true },
+    { default_threshold: null }, { clinical_validation: true }, { status: 'validated' }, { architecture: 'unknown' }]) {
+    const bad = createSegmentationApi({ get: async () => ({ data: { ...config, ...change } }) });
+    await assert.rejects(bad.config(7), /Unexpected segmentation configuration/);
+  }
+});
+
 test("threshold accepts both boundaries and rejects empty, nonnumeric and out-of-range values", () => {
   for (const value of [0, "0", "0.70", 1, "1"]) assert.equal(parseThreshold(value), Number(value));
   for (const value of ["", " ", NaN, Infinity, "wrong", -0.1, 1.1, null, undefined, false]) assert.throws(() => parseThreshold(value), /between 0 and 1/);

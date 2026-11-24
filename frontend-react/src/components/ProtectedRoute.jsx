@@ -1,50 +1,14 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Loading } from './ui';
+import SessionRecovery from './SessionRecovery';
 
-/**
- * Wraps a route and redirects to /login if no JWT is present.
- * Optional `roles` prop restricts access by role.
- */
 export default function ProtectedRoute({ children, roles }) {
-  const { user, loading } = useAuth();
+  const { user, loading, restorationError } = useAuth();
   const location = useLocation();
-
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              border: "3px solid #e8ede0",
-              borderTopColor: "#222222",
-              animation: "spin 0.8s linear infinite",
-              margin: "0 auto 12px",
-            }}
-          />
-          <p style={{ color: "#72766f", fontSize: 14 }}>Loading…</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/403" replace />;
-  }
-
+  if (loading) return <Loading label="Verifying your session..." />;
+  if (restorationError) return <SessionRecovery />;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  if (roles && !roles.includes(user.role)) return <Navigate to="/403" replace />;
   return children;
 }

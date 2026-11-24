@@ -84,7 +84,7 @@ needed for this read endpoint. See [the viewer guide](../docs/frontend-segmentat
 
 ```powershell
 .\.venv\Scripts\python -m pytest -q --cov=app --cov-report=term-missing
-.\.venv\Scripts\python scripts/test_postgres.py --bin "C:\Program Files\PostgreSQL\18\bin"
+.\.venv\Scripts\python scripts/test_postgres.py --bin "<POSTGRESQL_BIN>"
 .\.venv\Scripts\python scripts/test_frontend_contract.py
 .\.venv\Scripts\python -m pip check
 ```

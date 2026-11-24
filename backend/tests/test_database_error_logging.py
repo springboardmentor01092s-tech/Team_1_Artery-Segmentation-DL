@@ -41,9 +41,16 @@ def test_database_error_preserves_503_and_redacts_sensitive_context(caplog, sqls
     '/api/v1/stenosis/analytics/summary',
     '/api/v1/stenosis/analytics/analyses?limit=10&offset=0',
 ])
-def test_unmigrated_analytics_fails_honestly_and_recovers_after_upgrade(client, account, db, path):
+def test_unmigrated_analytics_fails_honestly_and_recovers_after_upgrade(client, account, db, path, monkeypatch):
     from alembic import command
     from alembic.config import Config
+    from app.main import app
+    from app.core.review_access import enforce_review_access
+
+    # Isolate the historical missing-analytics diagnostic, retaining every
+    # assertion. Missing review-schema denial is tested separately with the
+    # actual guard; production never bypasses it on a missing table.
+    monkeypatch.setitem(app.dependency_overrides, enforce_review_access, lambda: None)
 
     # Only the disposable database selected by conftest is ever migrated.
     _, headers = account('Admin')

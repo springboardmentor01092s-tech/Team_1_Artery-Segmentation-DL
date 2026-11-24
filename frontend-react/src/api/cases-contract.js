@@ -60,6 +60,8 @@ const STATUS_MAP = {
   pending: "Pending",
   processing: "Processing",
   complete: "Complete",
+  awaiting_review: "Awaiting review",
+  changes_requested: "Changes requested",
   failed: "Failed",
 };
 
@@ -148,6 +150,14 @@ export function fromCaseUpdateForm(form) {
 
 export function createCasesApi(api) {
   return {
+    async workflow(caseId) {
+      const { data } = await api.get(`/cases/${caseId}/workflow`);
+      return toCaseWorkflow(data, caseId);
+    },
+    async review(caseId, request) {
+      const { data } = await api.post(`/cases/${caseId}/reviews`, request);
+      return toCaseWorkflow(data, caseId);
+    },
     /** List all cases the current user is authorized to see. */
     async list() {
       const { data } = await api.get("/cases");
@@ -250,4 +260,40 @@ export function createCasesApi(api) {
       return toCase(data);
     },
   };
+}
+
+// Workflow decisions never authorize a quantitative/clinical capability.
+export function toCaseWorkflow(data, caseId) {
+  const fail = () => { throw new Error('Case workflow evidence is inconsistent; refresh before reviewing.'); };
+  if (!data || !Number.isSafeInteger(data.case_id) || data.case_id < 1 || data.case_id !== Number(caseId) || data.research_only !== true || data.clinical_validation !== false
+      || !Array.isArray(data.review_history) || typeof data.review_requires_new_run !== 'boolean') fail();
+  const analysis = data.model_analysis;
+  if (!analysis || typeof analysis.available !== 'boolean') fail();
+  const run = analysis.run;
+  const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
+  const hashes = ['source_sha256', 'checkpoint_sha256', 'mask_sha256', 'probabilities_sha256'];
+  const validHashes = value => hashes.every(key => typeof value?.[key] === 'string' && /^[0-9a-f]{64}$/.test(value[key]));
+  const validThreshold = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
+  if (analysis.available) {
+    if (!run || !uuid(run.segmentation_result_id) || !validHashes(run) || !validThreshold(run.threshold)) fail();
+  } else if (run !== null || typeof analysis.reason !== 'string') fail();
+  function validReview(review) {
+    return review && uuid(review.id) && uuid(review.segmentation_result_id) && review.case_id === Number(caseId)
+      && Number.isSafeInteger(review.reviewer_id) && review.reviewer_id > 0
+      && ['Admin', 'Clinician'].includes(review.reviewer_role)
+      && Number.isFinite(Date.parse(review.reviewed_at)) && review.scope === 'research_workflow_v1'
+      && ['accepted_for_research', 'changes_requested'].includes(review.outcome)
+      && (review.note === null || typeof review.note === 'string')
+      && typeof review.current === 'boolean' && validHashes(review) && validThreshold(review.threshold);
+  }
+  function currentReview(review) {
+    return validReview(review) && review.current && run && review.segmentation_result_id === run.segmentation_result_id
+      && hashes.every(key => review[key] === run[key]) && review.threshold === run.threshold;
+  }
+  if (data.review !== null && !currentReview(data.review)) fail();
+  if (data.review_history.some(review => !validReview(review) || (review.current && !currentReview(review)))) fail();
+  const expected = data.review ? data.review.outcome === 'accepted_for_research' ? 'complete' : 'changes_requested'
+    : analysis.available ? 'awaiting_review' : 'pending';
+  if (data.case_status !== expected) fail();
+  return { ...data, caseStatus: STATUS_MAP[expected] };
 }

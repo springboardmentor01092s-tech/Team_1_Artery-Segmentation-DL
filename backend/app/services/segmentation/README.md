@@ -1,5 +1,61 @@
 # Experimental SmallUNet3D integration
 
+## Explicit SegResNet runtime
+
+`segresnet-1mm-v1` is a separate, opt-in recipe. Default configuration continues
+to run the historical SmallUNet3D recipe without resampling. No architecture is
+inferred from a filename and no runtime is enabled by importing an evaluation.
+
+For SegResNet, install the optional `requirements-model.txt` CPU/CUDA runtime,
+then `requirements-segresnet.txt` (MONAI 1.6.1). Set
+`VASCULAI_MODEL_ARCHITECTURE=segresnet-1mm-v1`, the trusted checkpoint path and
+its independently verified `VASCULAI_MODEL_CHECKPOINT_SHA256`. The runtime checks
+the hash before and after safe weights-only loading, strict model state, finite
+weights, recorded model configuration, optimizer count, run UUID and recipe.
+The checkpoint remains outside Git and the image.
+
+The frozen input recipe requires coded CT millimetre geometry with orthogonal
+axes (oblique orthogonal grids are supported; shear and unknown units abstain).
+It preserves the source axes/origin, resamples HU linearly to 1 mm, clips
+[-200,800], normalizes and reproduces the float16 cache quantization. Inference
+uses 96³ windows, 25% overlap and Gaussian blending. Foreground probabilities
+are mapped linearly back to the original grid in 16-slice slabs, then thresholded
+at **0.5**, with no component removal or morphology. This threshold cannot be
+retuned through a request. Existing native-volume limits and the frozen
+32-million-voxel cache limit are enforced. CPU uses float32; GPU uses AMP float16;
+their arithmetic is not claimed bitwise equivalent.
+
+`GET /api/v1/cases/{case_id}/segmentation-config` reuses case-reader authorization
+and reports the selected recipe/default threshold without exposing artifact
+paths. `configured_not_verified` is not a readiness or validation claim. The
+website obtains this configuration before enabling a run; historical history
+and downloads remain available if configuration is unavailable.
+
+`deploy/compose.segresnet.yaml` is an optional CPU overlay, separate from the
+legacy `compose.model.yaml`. Both model build switches default to false. It
+requires explicit external artifact bindings; it does not deploy itself, change
+the database, activate a worker or register a quantitative stenosis gate.
+
+Saved validation results for the 200-Training/50-Val experiment establish
+research segmentation evidence only. They do not establish a stenosis detector,
+clinical performance, independent held-out Testing performance or validated
+severity/percentage measurements.
+
+Recorded experiment: training run `8c520cb9-096a-40ef-aee9-974a33a44d54`,
+40,000 verified optimizer updates, checkpoint SHA-256
+`b964a4488adbcb1f905f1f232c57e419ecc01a0c35ea27561ff211a58151009e`.
+All 50 Split-4 Val native-grid predictions were independently checked against
+their saved source identities and confusion counts: macro Dice **0.755683**,
+IoU **0.609950**, precision **0.783651**, recall **0.735917**, with 50/50
+included cases. These are macro averages; they are not pooled micro scores.
+Val was used to select the checkpoint, so this is not an independent test result.
+
+On exactly the two shared frozen Val cases 851 and 852, matching CT/reference
+hashes give macro Dice **0.118866** for SmallUNet3D (fixed 0.70) and **0.777426**
+for SegResNet (fixed 0.5). This small descriptive comparison uses different
+preprocessing recipes and does not establish a full-cohort model-selection or
+clinical claim. No held-out Testing files were used.
+
 This is the supplied baseline, not a clinically validated system. It was trained
 on ImageCAS cases 251–260. The handoff reports a best tested **mean per-case Dice
 of approximately 0.1052 at threshold 0.70** over validation cases 851–900. The
@@ -44,10 +100,12 @@ CPU runtime is PyTorch 2.14.1+cpu. For CUDA, install a compatible official PyTor
 wheel, then explicitly configure `VASCULAI_MODEL_DEVICE=cuda`. CUDA has not been
 verified locally. No automatic package or checkpoint downloads occur at runtime.
 
-The preserved local handoff root is:
+The historical model handoff is stored outside this repository in a private local
+artifact directory. Its machine-specific absolute path is intentionally omitted.
+The expected artifact layout within that external handoff is:
 
 ```text
-F:\Documents\artery_demo\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered
+<private-handoff-root>
 ```
 
 Verified artifact paths relative to that root:
@@ -68,15 +126,15 @@ optional `reports/` directory is absent. Leave the handoff untouched.
 For a durable external artifact store, recommended exact destinations are:
 
 ```text
-F:\Documents\vascuai-artifacts\checkpoints\artery_unet_10case_weighted_step700.pt
-F:\Documents\vascuai-artifacts\samples\case_851_ct.nii.gz
-F:\Documents\vascuai-artifacts\samples\case_851_reference_mask.nii.gz
+<private-artifact-root>/checkpoints/artery_unet_10case_weighted_step700.pt
+<private-artifact-root>/samples/case_851_ct.nii.gz
+<private-artifact-root>/samples/case_851_reference_mask.nii.gz
 ```
 
 These recommended destinations are not assumed to exist: copy and verify the
 files before pointing configuration there. The local verification uses the
 existing handoff paths, and writes sample outputs outside the repository under
-`F:\Documents\vascuai-artifacts\runs\`. The root `.gitignore` excludes the entire
+an external run directory selected by the operator. The root `.gitignore` excludes the entire
 local `model/` handoff, weights, NIfTI files, Python caches and environments. No
 weights or volumes belong in normal Git history; Git LFS is not required here.
 
@@ -95,10 +153,14 @@ Copy/update `backend/.env` locally; `.env.example` contains all model settings.
 | `VASCULAI_MODEL_MAX_VOXELS` | `67108864` | Inference spatial voxel limit, additionally bounded by upload limit |
 | `OUTPUT_DIR` | `./outputs` | Backend result storage, never a public static directory |
 
-For this machine, a PowerShell session can use the preserved checkpoint directly:
+For local use, set `VASCULAI_MODEL_CHECKPOINT` to the actual checkpoint path in
+the separately obtained private artifact store. Do not copy the path or artifact
+into public source history. For example, set the variable interactively in the
+local PowerShell session after locating the approved checkpoint; do not commit
+machine-specific values.
 
 ```powershell
-$env:VASCULAI_MODEL_CHECKPOINT = 'F:\Documents\artery_demo\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered\model\artery_unet_10case_weighted_step700.pt'
+# Set VASCULAI_MODEL_CHECKPOINT to the verified local checkpoint path.
 ```
 
 No Windows path is hardcoded in executable production code. The API uses the
@@ -169,7 +231,7 @@ does not edit either source header. No resampling is performed.
 From `backend/`, using the existing handoff (output directory must not exist):
 
 ```powershell
-python -m app.services.segmentation.inference --ct ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_ct.nii.gz --checkpoint ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt --reference-mask ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_reference_mask.nii.gz --allow-reference-unknown-units --output-dir F:/Documents/vascuai-artifacts/runs/case-851-new-run --threshold 0.70 --batch-size 1 --device cpu --threads 4
+python -m app.services.segmentation.inference --ct ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_ct.nii.gz --checkpoint ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt --reference-mask ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_reference_mask.nii.gz --allow-reference-unknown-units --output-dir <PRIVATE_ARTIFACT_PATH> --threshold 0.70 --batch-size 1 --device cpu --threads 4
 ```
 
 The CLI reads the checkpoint and threshold environment variables as defaults;
@@ -286,7 +348,7 @@ From `backend/`:
 ```powershell
 $env:VASCULAI_TEST_CHECKPOINT = $env:VASCULAI_MODEL_CHECKPOINT
 python -m pytest -q
-python scripts/test_postgres.py --bin 'C:\Program Files\PostgreSQL\18\bin'
+python scripts/test_postgres.py --bin '<POSTGRESQL_BIN>'
 python scripts/test_frontend_contract.py
 python -m pip check
 ```

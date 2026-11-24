@@ -104,7 +104,7 @@ From `frontend-react/`:
 npm test
 npm run build
 npm run lint
-$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = 'C:\Users\vimzz\AppData\Local\ms-playwright\chromium-1223\chrome-win64\chrome.exe'
+$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = '<LOCAL_TOOL_PATH>'
 npm run test:e2e
 ```
 

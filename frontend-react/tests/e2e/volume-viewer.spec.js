@@ -73,7 +73,7 @@ test('authenticated orthogonal viewer renders real synthetic data and keyboard c
   await page.getByLabel('View',{exact:true}).selectOption('slices');
   const violations = await new AxeBuilder({page}).include('.volume-viewer').withTags(['wcag2a','wcag2aa']).analyze();
   expect(violations.violations).toEqual([]);
-  await page.screenshot({path:'test-results/viewer-desktop.png',fullPage:true});
+  await page.screenshot({path:test.info().outputPath('viewer-desktop.png'),fullPage:true});
   const retained = await canvas.elementHandle();
   await page.getByRole('button',{name:'Close viewer',exact:true}).click();
   await expect(canvas).toHaveCount(0);
@@ -81,6 +81,46 @@ test('authenticated orthogonal viewer renders real synthetic data and keyboard c
   await retained.dispose();
   await expect(page.getByRole('button',{name:`View CT + Segmentation for run ${id}`,exact:true})).toBeFocused();
   expect(errors).toEqual([]);
+});
+
+test('tilt buttons remain continuous after a 280-degree mouse elevation', async ({page}) => {
+  await setup(page); await open(page); await ready(page);
+  await page.getByLabel('View', {exact:true}).selectOption('mask3d');
+  const canvas = page.getByRole('img', {name:/CT slices/});
+  await canvas.scrollIntoViewIfNeeded();
+  const box = await canvas.boundingBox();
+  // NiiVue allows unrestricted mouse rotation; 280 degrees is -80 degrees.
+  for (let i=0; i<3; i++) {
+    await page.mouse.move(box.x+box.width*.5, box.y+box.height*.5-45);
+    await page.mouse.down();
+    await page.mouse.move(box.x+box.width*.5, box.y+box.height*.5+45, {steps:3});
+    await page.mouse.up();
+  }
+  const up = page.getByRole('button', {name:'Tilt 3D up', exact:true});
+  await expect(up).toBeEnabled();
+  await expect(page.getByLabel('3D camera', {exact:true})).toContainText('elevation -80°');
+  await up.click();
+  await expect(page.getByLabel('3D camera', {exact:true})).toContainText('elevation -65°');
+  await page.getByRole('button', {name:'Reset 3D view', exact:true}).click();
+  await expect(page.getByLabel('3D camera', {exact:true})).toHaveText('Azimuth 110°, elevation 10°, zoom 100%');
+});
+
+test('tilt returns from a mouse angle past the pole without snapping to 90 degrees', async ({page}) => {
+  await setup(page); await open(page); await ready(page);
+  await page.getByLabel('View', {exact:true}).selectOption('mask3d');
+  const canvas = page.getByRole('img', {name:/CT slices/});
+  await canvas.scrollIntoViewIfNeeded();
+  const box = await canvas.boundingBox();
+  for (let i=0; i<2; i++) {
+    await page.mouse.move(box.x+box.width*.5, box.y+box.height*.5-35);
+    await page.mouse.down();
+    await page.mouse.move(box.x+box.width*.5, box.y+box.height*.5+35, {steps:3});
+    await page.mouse.up();
+  }
+  await expect(page.getByLabel('3D camera', {exact:true})).toContainText('elevation 150°');
+  await expect(page.getByRole('button', {name:'Tilt 3D up', exact:true})).toBeDisabled();
+  await page.getByRole('button', {name:'Tilt 3D down', exact:true}).click();
+  await expect(page.getByLabel('3D camera', {exact:true})).toContainText('elevation 135°');
 });
 
 test('3D camera controls are keyboard accessible and reset presentation only', async ({page}) => {
@@ -177,7 +217,7 @@ test('mobile viewer remains accessible and does not overflow', async ({ page }) 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const violations = await new AxeBuilder({page}).include('.volume-viewer').withTags(['wcag2a','wcag2aa']).analyze();
   expect(violations.violations).toEqual([]);
-  await page.screenshot({path:'test-results/viewer-mobile.png',fullPage:true});
+  await page.screenshot({path:test.info().outputPath('viewer-mobile.png'),fullPage:true});
 });
 
 for (const [name, options, message] of [

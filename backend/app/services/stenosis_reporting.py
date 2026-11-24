@@ -4,6 +4,7 @@ import io
 import re
 
 from fastapi import HTTPException
+from app.core.quantitative_gate import QuantitativeGateError, require_reportable_result
 from app.models import Case
 from app.schemas.stenosis_reporting import StenosisReport
 from app.schemas.stenosis_explanations import ExplanationList
@@ -12,7 +13,7 @@ from app.services import stenosis_jobs as jobs, stenosis_results as results, ste
 LIMITATIONS = [
     "Experimental research prototype; not a clinically validated diagnosis or autonomous medical decision.",
     "An unavailable/incomplete analysis or zero candidate findings does not establish absence of stenosis.",
-    "Only supplied measurements, anatomy and severity are reproduced; methods are not harmonized or inferred.",
+    "Quantitative measurements require a separately validated gate; none is currently registered. Supplied anatomy is not independently inferred.",
     "Explanation records describe model attribution, not correctness, calibrated confidence or clinical evidence.",
     "This is a timestamped snapshot. Source geometry agreement is not independently verified anatomical registration.",
 ]
@@ -36,6 +37,10 @@ def report(db, case_id, analysis_id):
         except HTTPException as failure:
             if failure.status_code != 409: raise
             code = failure.detail.get("code") if isinstance(failure.detail,dict) else None
+            if code == "quantitative_gate_unavailable":
+                # Preserve the explicit gate reason; do not disguise a withheld
+                # legacy measurement as a generic storage/source failure.
+                raise
             state = "stale" if code == "source_changed" else "integrity_error"
             reason, result, explanations = "The report source or stored result could not be verified; findings are withheld.", None, None
     return StenosisReport(schema_version="1.0",document_type="stenosis_analysis_research_report",generated_at=jobs.now(),
@@ -63,6 +68,10 @@ def csv_cell(value):
 def csv_report(value):
     if value.report_state != "completed" or value.result is None:
         raise jobs.conflict("report_not_completed", "CSV findings export requires a current verified completed result.")
+    try:
+        require_reportable_result(value.result.result)
+    except QuantitativeGateError as exc:
+        raise jobs.conflict("quantitative_gate_unavailable", str(exc)) from None
     output = io.StringIO(newline="")
     writer = csv.writer(output,quoting=csv.QUOTE_ALL,lineterminator="\r\n")
     writer.writerow(CSV_COLUMNS)

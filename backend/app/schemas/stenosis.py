@@ -5,6 +5,7 @@ from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictBool, StringConstraints, model_validator
+from app.core.quantitative_gate import require_measurement_gate, require_reportable_result
 
 CONTRACT_VERSION = "1.0"
 Version = Literal["1.0"]
@@ -146,6 +147,16 @@ class LesionLocation(Contract):
         return self
 
 
+class QuantitativeGateReference(Contract):
+    gate_id: Identifier
+    gate_version: Identifier
+    evidence_sha256: SHA256
+    analysis_method_id: Identifier
+    analysis_method_version: Identifier
+    source_sha256: SHA256
+    checkpoint_sha256: SHA256 | None = None
+
+
 class Measurement(Contract):
     value: Annotated[float, Field(ge=0, allow_inf_nan=False)] | None
     unit: Literal["mm", "percent"]
@@ -154,6 +165,7 @@ class Measurement(Contract):
     method_version: Identifier | None = None
     definition: Text | None = None
     reference_region: Text | None = None
+    validation_gate: QuantitativeGateReference | None = None
 
     @model_validator(mode="after")
     def value_or_reason(self) -> Self:
@@ -164,6 +176,7 @@ class Measurement(Contract):
                 raise ValueError("A measurement requires method provenance")
             if self.unit == "percent" and (self.value > 100 or not self.definition):
                 raise ValueError("Percentage narrowing requires a definition and range 0–100")
+            require_measurement_gate(self)
         return self
 
 
@@ -253,6 +266,7 @@ class AnalysisState(StrEnum):
 
 
 class AnalysisResult(Contract):
+    model_config = ConfigDict(revalidate_instances="always")
     contract_version: Version
     analysis_id: UUID
     state: AnalysisState
@@ -262,6 +276,7 @@ class AnalysisResult(Contract):
 
     @model_validator(mode="after")
     def result_state(self) -> Self:
+        require_reportable_result(self)
         if self.state == AnalysisState.COMPLETED:
             if self.lesions is None or self.unavailable_reason is not None:
                 raise ValueError("Completed analysis requires a lesion list, possibly empty, and no failure reason")

@@ -16,7 +16,7 @@ ignored by Git. Model weights and medical volumes are not source files.
 ## Actual artifact inspection
 
 Handoff root:
-`F:\Documents\artery_demo\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered`.
+`<REPOSITORY_ROOT>\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered`.
 
 | Artifact | Actual path relative to handoff root | Result |
 | --- | --- | --- |
@@ -81,10 +81,10 @@ experimental baseline with substantial limitations, not clinically validated.
 Outputs are outside the Git workspace:
 
 ```text
-F:\Documents\vascuai-artifacts\runs\case-851-step700-threshold070-20261016\probabilities.nii.gz
-F:\Documents\vascuai-artifacts\runs\case-851-step700-threshold070-20261016\prediction_mask.nii.gz
-F:\Documents\vascuai-artifacts\runs\case-851-step700-threshold070-20261016\metadata.json
-F:\Documents\vascuai-artifacts\runs\case-851-step700-threshold070-20261016\verification.json
+<PRIVATE_ARTIFACT_PATH>
+<PRIVATE_ARTIFACT_PATH>
+<PRIVATE_ARTIFACT_PATH>
+<PRIVATE_ARTIFACT_PATH>
 ```
 
 An independent readback verified finite float32 probabilities bounded by [0,1],

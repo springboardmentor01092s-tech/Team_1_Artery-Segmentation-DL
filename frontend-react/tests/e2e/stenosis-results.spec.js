@@ -77,9 +77,12 @@ for (const permuted of [false,true]) test(`real WebGL candidate selection, marke
   expect(errors).toEqual([]);
 });
 
-test('missing values, explicit zero, absent position and unknown URL identity are distinct',async ({page})=>{
-  const fixture=await setup(page,{zero:true,noLocation:true});await page.goto(fixture.url);
-  await expect(page.getByText('0 mm',{exact:true})).toBeVisible();
+test('unbacked zero never reaches display; unavailable location and unknown identity remain distinct',async ({page})=>{
+  const blocked=await setup(page,{zero:true,noLocation:true});await page.goto(blocked.url);
+  await expect(page.getByRole('alert')).toContainText('No validated quantitative stenosis gate');
+  await expect(page.getByText('0 mm',{exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'View candidates on CT',exact:true})).toHaveCount(0);
+  const fixture=await setup(page,{noLocation:true});await page.goto(fixture.url);
   await expect(page.getByText('Localization unavailable: Synthetic fixture has no supplied position')).toBeVisible();
   await expect(page.getByText(/Unavailable: Synthetic fixture: not supplied/)).not.toHaveCount(0);
   await page.goto(fixture.url+'&lesion=ffffffff-1234-4567-890a-123456789abc');

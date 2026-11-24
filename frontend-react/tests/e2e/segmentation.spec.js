@@ -55,7 +55,7 @@ test("submits once, shows honest loading, and reloads authoritative history", as
   const fixture = await segmentationRoutes(page, { gated: true });
   await page.goto("/cases/1/analysis");
   await expect(page.getByRole("heading", { name: "No segmentation runs recorded" })).toBeVisible();
-  await expect(page.getByLabel("Segmentation threshold")).toHaveValue("0.70");
+  await expect(page.getByLabel("Segmentation threshold")).toHaveValue("0.7");
   await page.getByRole("button", { name: "Run segmentation", exact: true }).click();
   await expect(page.getByRole("button", { name: "Segmentation running…", exact: true })).toBeDisabled();
   await expect(page.getByRole("status").filter({ hasText: "synchronous request" })).toBeVisible();
@@ -68,6 +68,32 @@ test("submits once, shows honest loading, and reloads authoritative history", as
   await expect(page.getByText("0.7", { exact: true })).toBeVisible();
   await expect(page.getByText("0.42", { exact: true })).toHaveCount(0);
   expect(fixture.counts().getCount).toBeGreaterThanOrEqual(2);
+});
+
+test('SegResNet uses the fixed server recipe instead of the legacy threshold', async ({ page }) => {
+  await installApi(page);
+  await segmentationRoutes(page, { runStatus: 503, runDetail: 'Synthetic runtime unavailable' });
+  await page.route('**/api/v1/cases/1/segmentation-config', route => route.fulfill({ json: {
+    architecture: 'segresnet-1mm-v1', default_threshold: .5, threshold_adjustable: false,
+    status: 'configured_not_verified', experimental: true, clinical_validation: false,
+  } }));
+  await page.goto('/cases/1/analysis');
+  await expect(page.getByLabel('Segmentation threshold')).toHaveValue('0.5');
+  await expect(page.getByLabel('Segmentation threshold')).toBeDisabled();
+  const request = page.waitForRequest(req => req.method() === 'POST' && req.url().endsWith('/segmentations'));
+  await page.getByRole('button', { name: 'Run segmentation', exact: true }).click();
+  expect((await request).postDataJSON()).toEqual({ threshold: .5 });
+  await expect(page.getByRole('alert')).toContainText('Synthetic runtime unavailable');
+});
+
+test('missing or malformed model configuration blocks execution but preserves history', async ({ page }) => {
+  await installApi(page);
+  const fixture = await segmentationRoutes(page, { results: [result()] });
+  await page.route('**/api/v1/cases/1/segmentation-config', route => route.fulfill({ json: {} }));
+  await page.goto('/cases/1/analysis');
+  await expect(page.getByRole('button', { name: 'Run segmentation', exact: true })).toBeDisabled();
+  await expect(page.getByRole('article', { name: `Segmentation ${id}` })).toBeVisible();
+  expect(fixture.counts().postCount).toBe(0);
 });
 
 test("validates threshold boundaries without submitting invalid values", async ({ page }) => {
