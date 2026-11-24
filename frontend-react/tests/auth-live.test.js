@@ -6,12 +6,18 @@ import { createAuthApi } from '../src/api/auth-contract.js';
 const baseURL = process.env.VASCUAI_API_URL;
 if (!baseURL) throw new Error('Run backend/scripts/test_frontend_contract.py to start an isolated server.');
 const password = 'contract-test-password-123';
-const http = axios.create({ baseURL, proxy: false });
-const auth = createAuthApi(http);
-const bearer = (session) => { http.defaults.headers.common.Authorization = 'Bearer ' + session.access_token; };
+function createClient() {
+  const http = axios.create({ baseURL, proxy: false });
+  return {
+    http,
+    auth: createAuthApi(http),
+    bearer: (session) => { http.defaults.headers.common.Authorization = 'Bearer ' + session.access_token; },
+  };
+}
 const status = (code) => (err) => err.response?.status === code;
 
 test('real Axios registration/login/profile/password/logout contract', async () => {
+  const { auth, bearer } = createClient();
   const payload = { name: 'HTTP Test User', email: 'http-user@example.org', password, role: 'Clinician', institution: 'Test Lab' };
   const session = await auth.register(payload);
   assert.equal(session.user.name, payload.name);
@@ -30,6 +36,9 @@ test('real Axios registration/login/profile/password/logout contract', async () 
 });
 
 test('real Axios non-admin signup and server RBAC', async () => {
+  const { http, auth, bearer } = createClient();
+  // Registration is public even when a browser carries an expired session.
+  http.defaults.headers.common.Authorization = 'Bearer expired-contract-session';
   for (const role of ['Researcher', 'DataScientist']) {
     const session = await auth.register({ name: role, email: role.toLowerCase() + '@example.org', password, role });
     bearer(session);
@@ -43,9 +52,13 @@ test('real Axios non-admin signup and server RBAC', async () => {
 });
 
 test('real Axios administrator access and account revocation', async () => {
+  const { http, auth, bearer } = createClient();
+  const researcherSession = await auth.register({
+    name: 'Revocation Researcher', email: 'revocation-researcher@example.org', password, role: 'Researcher',
+  });
   bearer(await auth.login('contract-admin@example.org', password));
   const { data: users } = await http.get('/admin/users');
-  const researcher = users.find((user) => user.role === 'Researcher');
+  const researcher = users.find((user) => user.id === researcherSession.user.id);
   assert.ok(researcher);
   assert.equal((await http.patch('/admin/users/' + researcher.id, { role: 'DataScientist', is_active: false })).status, 200);
   await assert.rejects(auth.login(researcher.email, password), status(401));
