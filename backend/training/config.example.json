@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "dataset_root": "F:/Documents/vascuai-artifacts/datasets/imagecas-split4-extracted-20261101",
-  "manifest": "F:/Documents/vascuai-artifacts/diagnostics/imagecas-split4-extraction-manifest-20261101/imagecas-v2-latest-split4-manifest.csv",
+  "dataset_root": "<AUTHORIZED_DATASET_ROOT>",
+  "manifest": "<AUTHORIZED_SPLIT_MANIFEST>",
   "expected_training_cases": 700,
   "expected_validation_cases": 50,
   "spatial_policy": "voxel_grid_only",
-  "output_root": "F:/Documents/vascuai-artifacts/experiments/baseline-training",
+  "output_root": "<LOCAL_OUTPUT_ROOT>",
   "seed": 456,
   "cpu_threads": 2,
   "batch_size": 1,
@@ -15,10 +15,24 @@
   "max_steps": 300,
   "checkpoint_every": 100,
   "validation_every": 300,
-  "model": {"architecture": "SmallUNet3D", "base_channels": 8},
-  "preprocessing": {"clip": [-200, 800], "normalization": "(image + 200) / 1000", "nifti_scaling": "apply_once"},
+  "model": {
+    "architecture": "SmallUNet3D",
+    "base_channels": 8
+  },
+  "preprocessing": {
+    "clip": [
+      -200,
+      800
+    ],
+    "normalization": "(image + 200) / 1000",
+    "nifti_scaling": "apply_once"
+  },
   "sampling": {
-    "patch_size": [64, 64, 64],
+    "patch_size": [
+      64,
+      64,
+      64
+    ],
     "foreground_probability": 0.5,
     "attempted_empty_probability": 0.25,
     "random_probability": 0.25,
@@ -26,11 +40,28 @@
     "patches_per_case": 8,
     "case_order": "shuffled_without_replacement"
   },
-  "loss": {"positive_weight": 5.0, "smooth": 0.000001, "aggregation": "mean_BCE_plus_mean_per_sample_soft_Dice"},
-  "optimizer": {"name": "AdamW", "lr": 0.0002, "weight_decay": 0.00001, "betas": [0.9, 0.999], "eps": 1e-8, "gradient_clip_norm": 1.0},
-  "validation": {"threshold": 0.70, "stride": 32},
+  "loss": {
+    "positive_weight": 5.0,
+    "smooth": 1e-06,
+    "aggregation": "mean_BCE_plus_mean_per_sample_soft_Dice"
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0002,
+    "weight_decay": 1e-05,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "gradient_clip_norm": 1.0
+  },
+  "validation": {
+    "threshold": 0.7,
+    "stride": 32
+  },
   "initialization_checkpoint": {
-    "path": "F:/Documents/artery_demo/model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt",
+    "path": "<OPTIONAL_CHECKPOINT_PATH>",
     "sha256": "e208fa586bb9bb50dc77b913caa0355a547bad529f9f0d61df17880b2efc5254"
   }
 }

@@ -16,6 +16,20 @@ function casePath(id) {
 export function createSegmentationApi(api) {
   const activeRuns = new Set();
   return {
+    async config(caseId, { signal } = {}) {
+      casePath(caseId);
+      const { data } = await api.get(`/cases/${Number(caseId)}/segmentation-config`, signal ? { signal } : undefined);
+      if (!data || !['smallunet3d', 'segresnet-1mm-v1'].includes(data.architecture)
+          || typeof data.default_threshold !== 'number' || !Number.isFinite(data.default_threshold)
+          || data.default_threshold < 0 || data.default_threshold > 1
+          || typeof data.threshold_adjustable !== 'boolean'
+          || !['not_configured', 'configured_not_verified'].includes(data.status)
+          || data.experimental !== true || data.clinical_validation !== false
+          || (data.architecture === 'segresnet-1mm-v1' && (data.default_threshold !== .5 || data.threshold_adjustable))) {
+        throw new Error('Unexpected segmentation configuration. No model recipe was selected.');
+      }
+      return data;
+    },
     async list(caseId, { signal } = {}) {
       const { data } = await api.get(casePath(caseId), signal ? { signal } : undefined);
       if (!Array.isArray(data)) throw new Error("Unexpected segmentation history response.");

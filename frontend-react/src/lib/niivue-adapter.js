@@ -1,4 +1,20 @@
 // Keep the pinned viewer API in one place. No unauthenticated library fetches.
+export function normalizeCameraElevation(value) {
+  if (!Number.isFinite(value)) throw new TypeError('Camera elevation must be finite.');
+  // Mouse rotation is unrestricted in NiiVue. Use equivalent signed degrees
+  // for the bounded tilt controls (e.g. 280 degrees is -80, not above +90).
+  return ((value + 180) % 360 + 360) % 360 - 180;
+}
+
+export function nextCameraElevation(value, step) {
+  if (!Number.isFinite(step)) throw new TypeError('Camera tilt step must be finite.');
+  const current = normalizeCameraElevation(value);
+  // Keep the normal +/-90-degree button limits. If mouse rotation has already
+  // crossed a pole, return gradually instead of snapping straight to the pole.
+  const bound = Math.max(90, Math.abs(current));
+  return Math.max(-bound, Math.min(bound, current + step));
+}
+
 const released = new WeakSet();
 export function releaseViewer(viewer) {
   if (!viewer || released.has(viewer)) return;

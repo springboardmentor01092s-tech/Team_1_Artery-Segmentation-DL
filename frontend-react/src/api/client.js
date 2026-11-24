@@ -16,6 +16,7 @@ api.interceptors.response.use(
   (err) => {
     const detail = err.response?.data?.detail;
     if (typeof detail === 'string') err.message = detail;
+    if (detail && typeof detail.message === 'string') err.message = detail.message;
     if (Array.isArray(detail)) err.message = detail.map((item) => item.msg).join('; ');
     const currentToken = localStorage.getItem('vascuai_token');
     if (err.response?.status === 401 && currentToken

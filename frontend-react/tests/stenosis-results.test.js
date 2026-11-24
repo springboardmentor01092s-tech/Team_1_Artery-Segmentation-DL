@@ -4,6 +4,7 @@ import { createStenosisResultsApi, validateResultResponse } from '../src/api/ste
 import { geometryFingerprint, matchingLesion, validateLocalizationBinding } from '../src/lib/stenosis-results.js';
 import { navigateToLesion, projectLesionMarkers } from '../src/lib/lesion-viewer.js';
 import { geometryFixture, lesionIds, regionId, resultFixture } from './stenosis-results-fixtures.js';
+import { GATE_UNAVAILABLE_REASON, measurementPresentation, requireMeasurementGate } from '../src/lib/quantitative-gate.js';
 
 test('completed multiple and genuinely empty results validate', async () => {
   for (const count of [0, 3]) {
@@ -42,12 +43,40 @@ for (const kind of ['case','parent','hash','fingerprint','bounds','world','nan',
   await assert.rejects(validateResultResponse(root,1,root.result.analysis_id));
 });
 
-test('zero is a value with provenance; unavailable location remains explicit', async () => {
+test('zero is withheld without a validated gate; unavailable location remains explicit', async () => {
   const root = await resultFixture();
   root.result.lesions[0].measurements.minimum_lumen_diameter = {value:0,unit:'mm',unavailable_reason:null,method_id:'test-fixture',method_version:'1'};
   root.result.lesions[1].location = null;
   root.result.lesions[1].localization_unavailable_reason = {code:'not_provided',message:'Test-only unavailable localization'};
+  await assert.rejects(validateResultResponse(root,1,root.result.analysis_id), /validated quantitative/);
+  root.result.lesions[0].measurements.minimum_lumen_diameter = {value:null,unit:'mm',unavailable_reason:{code:'not_integrated',message:GATE_UNAVAILABLE_REASON}};
   await validateResultResponse(root,1,root.result.analysis_id);
+  assert.equal(root.result.lesions[1].location, null);
+});
+
+for (const field of ['reference_diameter','minimum_lumen_diameter','percentage_narrowing']) {
+  for (const value of [0, 25]) test(`rejects unregistered gate for ${field}=${value} before presentation`, async () => {
+    const root = await resultFixture();
+    const measurement = {value,unit:field==='percentage_narrowing'?'percent':'mm',unavailable_reason:null,
+      method_id:'synthetic-test-only',method_version:'v1',definition:'Negative bypass fixture only',
+      validation_gate:{gate_id:'synthetic-unregistered',gate_version:'v1',evidence_sha256:'a'.repeat(64),
+        analysis_method_id:root.result.provenance.method_id,analysis_method_version:root.result.provenance.method_version,
+        source_sha256:root.result.provenance.source.source_sha256,checkpoint_sha256:null,validated:true}};
+    root.result.lesions[0].measurements[field] = measurement;
+    await assert.rejects(validateResultResponse(root,1,root.result.analysis_id), /validated quantitative/);
+    assert.throws(()=>requireMeasurementGate(measurement,root.result.provenance), /validated quantitative/);
+    const displayed = measurementPresentation(measurement,root.result.provenance);
+    assert.equal(displayed.reportable,false);
+    assert.equal(displayed.text,`Unavailable: ${GATE_UNAVAILABLE_REASON}`);
+    assert.ok(!displayed.text.includes(`${value} ${measurement.unit}`));
+  });
+}
+
+test('direct presentation without adapter preserves unavailable reason and never self-validates supplied claims', () => {
+  assert.equal(measurementPresentation({value:null,unavailable_reason:{message:'Synthetic original reason'}}).text,'Unavailable: Synthetic original reason');
+  for (const value of [undefined, {value:0,unit:'mm',validated:true}, {value:35,unit:'percent',validation_gate:{gate_id:'__proto__'}}]) {
+    assert.equal(measurementPresentation(value).reportable,false);
+  }
 });
 
 test('results reuse authenticated relative API and forward cancellation', async () => {

@@ -1,0 +1,3593 @@
+{
+  "description": "SYNTHETIC BACKEND-GENERATED FIXTURE ONLY; NOT PATIENT DATA OR AN APPLICATION RECORD",
+  "layout": "permuted",
+  "ct_gzip_base64": "H4sIAAAAAAAC/+3PwQ2CQBAF0EEtwBY8e6ICRdvgQgPUQEl0QOjMdRFFDsabiXlvMplkstn8qYv4yjYOqZooHvVuF/s8u9Pn7q/TzDbxcznCPc8w9fmS8lWpx9ebbt4Pi10Vz3vzHNc/t8cyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4P/dAKOYyrOiOgMA",
+  "mask_gzip_base64": "H4sIAAAAAAAC/+3ZzQ2CMACA0VYvruHZkxMouoYXF2AGRnIDwmYi4G8ibWKQy/tI0wSqKYS8C6cYslqGdXucQxyO9xZh1c3Vbnxcjv08/Gj2ui3c9lP3Y39o91e0o3muqe7n65dzRXjcbzc3n/9cbrZBszb+Zse+1PXvK35eEGP2iuk2mXwO6ScpAQQgAJEAAhAJIACRAAIQCSAAkQACEIBIAAGIBBCASAABiAQQgABEAghAJIAARAIIQCSAAEQCCEAAIgEEIBJAACIBBCASQAACEAkgAJEAAhAJIACRAAIQCSAAAYgEEIBIAAGIBBCASAABCEAkgABEAghAJIAARAIIQCSAAAQg0uxExQykpl2Q3IMkgABEAghAJAFEEkAk+QrjK4wEEIBIAAGIBBCAAEQAAQhAJIAARAIIQCSAAEQCCEAAIgEEIBJAACIBBCASQAACEAEEIACRAAIQCSAAkQACEAkgAAGIBBCASAABiAQQgEgAAQhABBCAAEQCCEAkgABEAghAJIAABCASQAAiAQQgEkAAIgEEIF4mAQQgAJEAAhAJIACRAAIQCSAAAYgEEIBIAAGIBBCASAABiAQQgABEAghAJIAARAIIQCSAAAQgEkAAIgEEIBJAACIBBCASQAACEAkgAJEAAhAJIACRAAIQgEgAAYgEEIBIAAGIBBCA6N9dARtwe/4BngEA",
+  "input_branches": {
+    "preview": [
+      {
+        "branch_id": "main",
+        "ordered": true,
+        "points_ijk": [
+          [
+            16.0,
+            16.0,
+            4.0
+          ],
+          [
+            16.0,
+            16.0,
+            5.0
+          ],
+          [
+            16.0,
+            16.0,
+            6.0
+          ],
+          [
+            16.0,
+            16.0,
+            7.0
+          ],
+          [
+            16.0,
+            16.0,
+            8.0
+          ],
+          [
+            16.0,
+            16.0,
+            9.0
+          ],
+          [
+            16.0,
+            16.0,
+            10.0
+          ],
+          [
+            16.0,
+            16.0,
+            11.0
+          ],
+          [
+            16.0,
+            16.0,
+            12.0
+          ],
+          [
+            16.0,
+            16.0,
+            13.0
+          ],
+          [
+            16.0,
+            16.0,
+            14.0
+          ],
+          [
+            16.0,
+            16.0,
+            15.0
+          ],
+          [
+            16.0,
+            16.0,
+            16.0
+          ],
+          [
+            16.0,
+            16.0,
+            17.0
+          ],
+          [
+            16.0,
+            16.0,
+            18.0
+          ],
+          [
+            16.0,
+            16.0,
+            19.0
+          ],
+          [
+            16.0,
+            16.0,
+            20.0
+          ],
+          [
+            16.0,
+            16.0,
+            21.0
+          ],
+          [
+            16.0,
+            16.0,
+            22.0
+          ],
+          [
+            16.0,
+            16.0,
+            23.0
+          ],
+          [
+            16.0,
+            16.0,
+            24.0
+          ],
+          [
+            16.0,
+            16.0,
+            25.0
+          ],
+          [
+            16.0,
+            16.0,
+            26.0
+          ],
+          [
+            16.0,
+            16.0,
+            27.0
+          ],
+          [
+            16.0,
+            16.0,
+            28.0
+          ],
+          [
+            16.0,
+            16.0,
+            29.0
+          ],
+          [
+            16.0,
+            16.0,
+            30.0
+          ],
+          [
+            16.0,
+            16.0,
+            31.0
+          ],
+          [
+            16.0,
+            16.0,
+            32.0
+          ],
+          [
+            16.0,
+            16.0,
+            33.0
+          ],
+          [
+            16.0,
+            16.0,
+            34.0
+          ],
+          [
+            16.0,
+            16.0,
+            35.0
+          ],
+          [
+            16.0,
+            16.0,
+            36.0
+          ],
+          [
+            16.0,
+            16.0,
+            37.0
+          ],
+          [
+            16.0,
+            16.0,
+            38.0
+          ],
+          [
+            16.0,
+            16.0,
+            39.0
+          ],
+          [
+            16.0,
+            16.0,
+            40.0
+          ],
+          [
+            16.0,
+            16.0,
+            41.0
+          ],
+          [
+            16.0,
+            16.0,
+            42.0
+          ],
+          [
+            16.0,
+            16.0,
+            43.0
+          ],
+          [
+            16.0,
+            16.0,
+            44.0
+          ],
+          [
+            16.0,
+            16.0,
+            45.0
+          ],
+          [
+            16.0,
+            16.0,
+            46.0
+          ],
+          [
+            16.0,
+            16.0,
+            47.0
+          ],
+          [
+            16.0,
+            16.0,
+            48.0
+          ],
+          [
+            16.0,
+            16.0,
+            49.0
+          ],
+          [
+            16.0,
+            16.0,
+            50.0
+          ],
+          [
+            16.0,
+            16.0,
+            51.0
+          ],
+          [
+            16.0,
+            16.0,
+            52.0
+          ],
+          [
+            16.0,
+            16.0,
+            53.0
+          ],
+          [
+            16.0,
+            16.0,
+            54.0
+          ],
+          [
+            16.0,
+            16.0,
+            55.0
+          ],
+          [
+            16.0,
+            16.0,
+            56.0
+          ],
+          [
+            16.0,
+            16.0,
+            57.0
+          ],
+          [
+            16.0,
+            16.0,
+            58.0
+          ],
+          [
+            16.0,
+            16.0,
+            59.0
+          ],
+          [
+            16.0,
+            16.0,
+            60.0
+          ],
+          [
+            16.0,
+            16.0,
+            61.0
+          ],
+          [
+            16.0,
+            16.0,
+            62.0
+          ],
+          [
+            16.0,
+            16.0,
+            63.0
+          ],
+          [
+            16.0,
+            16.0,
+            64.0
+          ],
+          [
+            16.0,
+            16.0,
+            65.0
+          ],
+          [
+            16.0,
+            16.0,
+            66.0
+          ],
+          [
+            16.0,
+            16.0,
+            67.0
+          ],
+          [
+            16.0,
+            16.0,
+            68.0
+          ],
+          [
+            16.0,
+            16.0,
+            69.0
+          ],
+          [
+            16.0,
+            16.0,
+            70.0
+          ],
+          [
+            16.0,
+            16.0,
+            71.0
+          ],
+          [
+            16.0,
+            16.0,
+            72.0
+          ],
+          [
+            16.0,
+            16.0,
+            73.0
+          ],
+          [
+            16.0,
+            16.0,
+            74.0
+          ],
+          [
+            16.0,
+            16.0,
+            75.0
+          ],
+          [
+            16.0,
+            16.0,
+            76.0
+          ],
+          [
+            16.0,
+            16.0,
+            77.0
+          ],
+          [
+            16.0,
+            16.0,
+            78.0
+          ],
+          [
+            16.0,
+            16.0,
+            79.0
+          ],
+          [
+            16.0,
+            16.0,
+            80.0
+          ],
+          [
+            16.0,
+            16.0,
+            81.0
+          ],
+          [
+            16.0,
+            16.0,
+            82.0
+          ],
+          [
+            16.0,
+            16.0,
+            83.0
+          ],
+          [
+            16.0,
+            16.0,
+            84.0
+          ],
+          [
+            16.0,
+            16.0,
+            85.0
+          ],
+          [
+            16.0,
+            16.0,
+            86.0
+          ],
+          [
+            16.0,
+            16.0,
+            87.0
+          ],
+          [
+            16.0,
+            16.0,
+            88.0
+          ],
+          [
+            16.0,
+            16.0,
+            89.0
+          ],
+          [
+            16.0,
+            16.0,
+            90.0
+          ],
+          [
+            16.0,
+            16.0,
+            91.0
+          ],
+          [
+            16.0,
+            16.0,
+            92.0
+          ]
+        ],
+        "junctions_s_mm": [],
+        "mask_sha256": "850105c137a3d0e21e9d96605899695f5b28d22b07ba49ae821de59e6b562dc9",
+        "geometry_fingerprint": "8be45d606932bb79215551e0eeac5153f70318faaeda3f12c1dafc88b9fb4d7e"
+      }
+    ],
+    "no_candidate_preview": [
+      {
+        "branch_id": "main",
+        "ordered": true,
+        "points_ijk": [
+          [
+            16.0,
+            16.0,
+            4.0
+          ],
+          [
+            16.0,
+            16.0,
+            5.0
+          ],
+          [
+            16.0,
+            16.0,
+            6.0
+          ],
+          [
+            16.0,
+            16.0,
+            7.0
+          ],
+          [
+            16.0,
+            16.0,
+            8.0
+          ],
+          [
+            16.0,
+            16.0,
+            9.0
+          ],
+          [
+            16.0,
+            16.0,
+            10.0
+          ],
+          [
+            16.0,
+            16.0,
+            11.0
+          ],
+          [
+            16.0,
+            16.0,
+            12.0
+          ],
+          [
+            16.0,
+            16.0,
+            13.0
+          ],
+          [
+            16.0,
+            16.0,
+            14.0
+          ],
+          [
+            16.0,
+            16.0,
+            15.0
+          ],
+          [
+            16.0,
+            16.0,
+            16.0
+          ],
+          [
+            16.0,
+            16.0,
+            17.0
+          ],
+          [
+            16.0,
+            16.0,
+            18.0
+          ],
+          [
+            16.0,
+            16.0,
+            19.0
+          ],
+          [
+            16.0,
+            16.0,
+            20.0
+          ],
+          [
+            16.0,
+            16.0,
+            21.0
+          ],
+          [
+            16.0,
+            16.0,
+            22.0
+          ],
+          [
+            16.0,
+            16.0,
+            23.0
+          ],
+          [
+            16.0,
+            16.0,
+            24.0
+          ],
+          [
+            16.0,
+            16.0,
+            25.0
+          ],
+          [
+            16.0,
+            16.0,
+            26.0
+          ],
+          [
+            16.0,
+            16.0,
+            27.0
+          ],
+          [
+            16.0,
+            16.0,
+            28.0
+          ],
+          [
+            16.0,
+            16.0,
+            29.0
+          ]
+        ],
+        "junctions_s_mm": [],
+        "mask_sha256": "850105c137a3d0e21e9d96605899695f5b28d22b07ba49ae821de59e6b562dc9",
+        "geometry_fingerprint": "8be45d606932bb79215551e0eeac5153f70318faaeda3f12c1dafc88b9fb4d7e"
+      }
+    ],
+    "abstained_preview": [
+      {
+        "branch_id": "main",
+        "ordered": true,
+        "points_ijk": [
+          [
+            16.0,
+            16.0,
+            44.0
+          ],
+          [
+            16.0,
+            16.0,
+            45.0
+          ],
+          [
+            16.0,
+            16.0,
+            46.0
+          ],
+          [
+            16.0,
+            16.0,
+            47.0
+          ],
+          [
+            16.0,
+            16.0,
+            48.0
+          ],
+          [
+            16.0,
+            16.0,
+            49.0
+          ],
+          [
+            16.0,
+            16.0,
+            50.0
+          ]
+        ],
+        "junctions_s_mm": [],
+        "mask_sha256": "850105c137a3d0e21e9d96605899695f5b28d22b07ba49ae821de59e6b562dc9",
+        "geometry_fingerprint": "8be45d606932bb79215551e0eeac5153f70318faaeda3f12c1dafc88b9fb4d7e"
+      }
+    ]
+  },
+  "preview": {
+    "schema_version": "experimental-candidates/1.0",
+    "algorithm": {
+      "id": "experimental-mask-profile",
+      "version": "0.1.0"
+    },
+    "notice": "EXPERIMENTAL \u2014 NOT A DIAGNOSIS",
+    "measurement_status": "measurement_unavailable_no_validated_gate",
+    "source": {
+      "source_sha256": "c75d282c49880d79c4e81a80ae4bafb1d8f6d527066745ab6e447bdb456e68fe",
+      "mask_sha256": "850105c137a3d0e21e9d96605899695f5b28d22b07ba49ae821de59e6b562dc9",
+      "geometry_fingerprint": "8be45d606932bb79215551e0eeac5153f70318faaeda3f12c1dafc88b9fb4d7e",
+      "mask_role": "model_prediction",
+      "parent_segmentation_result_id": "12345678-1234-4567-890a-123456789abc",
+      "target_label": 1
+    },
+    "geometry": {
+      "shape": [
+        33,
+        33,
+        97
+      ],
+      "array_axis_order": "nifti_i_j_k",
+      "world_convention": "RAS",
+      "world_unit": "mm",
+      "affine": [
+        [
+          0.0,
+          0.0,
+          -1.0,
+          48.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0,
+          16.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          -16.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "parameters": {
+      "plane_pitch_mm": 0.5,
+      "plane_radius_mm": 8.0,
+      "sample_step_mm": 1.0,
+      "reference_inner_mm": 4.0,
+      "reference_outer_mm": 8.0,
+      "minimum_reference_samples_each_side": 4,
+      "area_ratio_trigger": 0.65,
+      "minimum_candidate_sections": 2,
+      "junction_exclusion_mm": 5.0
+    },
+    "parameter_status": "unvalidated_research_parameters",
+    "parameters_sha256": "e42b2183ba6a7f42ea2bc9128fd4b8835b396162a336ae7062bfa47b7f4717ba",
+    "branch_geometry_sha256": "1ae78c15934b7a85606134963658add3ac5f98af7df4e183247feb95bde5e545",
+    "candidates": [
+      {
+        "candidate_id": "candidate-001",
+        "kind": "experimental_candidate",
+        "branch_id": "main",
+        "sample_ijk": [
+          16.0,
+          16.0,
+          34.0
+        ],
+        "world_ras_mm": [
+          14.0,
+          0.0,
+          0.0
+        ],
+        "interval_s_mm": [
+          30.0,
+          34.0
+        ],
+        "supporting_sections": 5
+      }
+    ],
+    "branches": [
+      {
+        "branch_id": "main",
+        "sections": [
+          {
+            "s_mm": 0.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              4.0
+            ],
+            "world_ras_mm": [
+              44.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 1.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              5.0
+            ],
+            "world_ras_mm": [
+              43.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 2.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              6.0
+            ],
+            "world_ras_mm": [
+              42.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 3.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              7.0
+            ],
+            "world_ras_mm": [
+              41.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 4.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              8.0
+            ],
+            "world_ras_mm": [
+              40.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 5.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              9.0
+            ],
+            "world_ras_mm": [
+              39.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 6.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              10.0
+            ],
+            "world_ras_mm": [
+              38.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 7.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              11.0
+            ],
+            "world_ras_mm": [
+              37.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 8.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              12.0
+            ],
+            "world_ras_mm": [
+              36.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              1,
+              5
+            ]
+          },
+          {
+            "s_mm": 9.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              13.0
+            ],
+            "world_ras_mm": [
+              35.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              2,
+              5
+            ]
+          },
+          {
+            "s_mm": 10.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              14.0
+            ],
+            "world_ras_mm": [
+              34.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              3,
+              5
+            ]
+          },
+          {
+            "s_mm": 11.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              15.0
+            ],
+            "world_ras_mm": [
+              33.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              4,
+              5
+            ]
+          },
+          {
+            "s_mm": 12.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              16.0
+            ],
+            "world_ras_mm": [
+              32.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 13.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              17.0
+            ],
+            "world_ras_mm": [
+              31.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 14.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              18.0
+            ],
+            "world_ras_mm": [
+              30.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 15.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              19.0
+            ],
+            "world_ras_mm": [
+              29.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 16.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              20.0
+            ],
+            "world_ras_mm": [
+              28.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 17.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              21.0
+            ],
+            "world_ras_mm": [
+              27.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 18.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              22.0
+            ],
+            "world_ras_mm": [
+              26.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 19.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              23.0
+            ],
+            "world_ras_mm": [
+              25.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 20.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              24.0
+            ],
+            "world_ras_mm": [
+              24.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 21.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              25.0
+            ],
+            "world_ras_mm": [
+              23.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 22.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              26.0
+            ],
+            "world_ras_mm": [
+              22.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 23.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              27.0
+            ],
+            "world_ras_mm": [
+              21.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 24.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              28.0
+            ],
+            "world_ras_mm": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 25.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              29.0
+            ],
+            "world_ras_mm": [
+              19.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 26.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              30.0
+            ],
+            "world_ras_mm": [
+              18.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 27.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              31.0
+            ],
+            "world_ras_mm": [
+              17.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 28.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              32.0
+            ],
+            "world_ras_mm": [
+              16.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 29.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              33.0
+            ],
+            "world_ras_mm": [
+              15.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 30.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              34.0
+            ],
+            "world_ras_mm": [
+              14.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 84,
+            "diagnostic_area_mm2": 21.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 31.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              35.0
+            ],
+            "world_ras_mm": [
+              13.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 84,
+            "diagnostic_area_mm2": 21.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 32.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              36.0
+            ],
+            "world_ras_mm": [
+              12.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 84,
+            "diagnostic_area_mm2": 21.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 33.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              37.0
+            ],
+            "world_ras_mm": [
+              11.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 84,
+            "diagnostic_area_mm2": 21.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 34.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              38.0
+            ],
+            "world_ras_mm": [
+              10.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 84,
+            "diagnostic_area_mm2": 21.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 35.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              39.0
+            ],
+            "world_ras_mm": [
+              9.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 36.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              40.0
+            ],
+            "world_ras_mm": [
+              8.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 37.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              41.0
+            ],
+            "world_ras_mm": [
+              7.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 38.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              42.0
+            ],
+            "world_ras_mm": [
+              6.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 39.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              43.0
+            ],
+            "world_ras_mm": [
+              5.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 40.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              44.0
+            ],
+            "world_ras_mm": [
+              4.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 41.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              45.0
+            ],
+            "world_ras_mm": [
+              3.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 42.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              46.0
+            ],
+            "world_ras_mm": [
+              2.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 43.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              47.0
+            ],
+            "world_ras_mm": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 44.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              48.0
+            ],
+            "world_ras_mm": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 45.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              49.0
+            ],
+            "world_ras_mm": [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 46.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              50.0
+            ],
+            "world_ras_mm": [
+              -2.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 47.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              51.0
+            ],
+            "world_ras_mm": [
+              -3.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 48.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              52.0
+            ],
+            "world_ras_mm": [
+              -4.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 49.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              53.0
+            ],
+            "world_ras_mm": [
+              -5.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 50.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              54.0
+            ],
+            "world_ras_mm": [
+              -6.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 51.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              55.0
+            ],
+            "world_ras_mm": [
+              -7.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 52.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              56.0
+            ],
+            "world_ras_mm": [
+              -8.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 53.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              57.0
+            ],
+            "world_ras_mm": [
+              -9.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 54.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              58.0
+            ],
+            "world_ras_mm": [
+              -10.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 55.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              59.0
+            ],
+            "world_ras_mm": [
+              -11.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 56.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              60.0
+            ],
+            "world_ras_mm": [
+              -12.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 57.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              61.0
+            ],
+            "world_ras_mm": [
+              -13.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 58.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              62.0
+            ],
+            "world_ras_mm": [
+              -14.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 59.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              63.0
+            ],
+            "world_ras_mm": [
+              -15.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 60.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              64.0
+            ],
+            "world_ras_mm": [
+              -16.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 61.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              65.0
+            ],
+            "world_ras_mm": [
+              -17.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 62.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              66.0
+            ],
+            "world_ras_mm": [
+              -18.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 63.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              67.0
+            ],
+            "world_ras_mm": [
+              -19.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 64.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              68.0
+            ],
+            "world_ras_mm": [
+              -20.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 65.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              69.0
+            ],
+            "world_ras_mm": [
+              -21.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 66.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              70.0
+            ],
+            "world_ras_mm": [
+              -22.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 67.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              71.0
+            ],
+            "world_ras_mm": [
+              -23.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 68.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              72.0
+            ],
+            "world_ras_mm": [
+              -24.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 69.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              73.0
+            ],
+            "world_ras_mm": [
+              -25.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 70.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              74.0
+            ],
+            "world_ras_mm": [
+              -26.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 71.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              75.0
+            ],
+            "world_ras_mm": [
+              -27.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 72.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              76.0
+            ],
+            "world_ras_mm": [
+              -28.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 73.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              77.0
+            ],
+            "world_ras_mm": [
+              -29.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 74.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              78.0
+            ],
+            "world_ras_mm": [
+              -30.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 75.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              79.0
+            ],
+            "world_ras_mm": [
+              -31.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 76.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              80.0
+            ],
+            "world_ras_mm": [
+              -32.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 77.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              81.0
+            ],
+            "world_ras_mm": [
+              -33.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              4
+            ]
+          },
+          {
+            "s_mm": 78.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              82.0
+            ],
+            "world_ras_mm": [
+              -34.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              3
+            ]
+          },
+          {
+            "s_mm": 79.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              83.0
+            ],
+            "world_ras_mm": [
+              -35.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              2
+            ]
+          },
+          {
+            "s_mm": 80.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              84.0
+            ],
+            "world_ras_mm": [
+              -36.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              1
+            ]
+          },
+          {
+            "s_mm": 81.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              85.0
+            ],
+            "world_ras_mm": [
+              -37.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 82.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              86.0
+            ],
+            "world_ras_mm": [
+              -38.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 83.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              87.0
+            ],
+            "world_ras_mm": [
+              -39.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 84.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              88.0
+            ],
+            "world_ras_mm": [
+              -40.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 85.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              89.0
+            ],
+            "world_ras_mm": [
+              -41.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 86.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              90.0
+            ],
+            "world_ras_mm": [
+              -42.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 87.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              91.0
+            ],
+            "world_ras_mm": [
+              -43.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 88.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              92.0
+            ],
+            "world_ras_mm": [
+              -44.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          }
+        ],
+        "evaluable_sections": 65,
+        "abstained_sections": 24
+      }
+    ],
+    "status": "candidate_preview",
+    "reason": null
+  },
+  "no_candidate_preview": {
+    "schema_version": "experimental-candidates/1.0",
+    "algorithm": {
+      "id": "experimental-mask-profile",
+      "version": "0.1.0"
+    },
+    "notice": "EXPERIMENTAL \u2014 NOT A DIAGNOSIS",
+    "measurement_status": "measurement_unavailable_no_validated_gate",
+    "source": {
+      "source_sha256": "c75d282c49880d79c4e81a80ae4bafb1d8f6d527066745ab6e447bdb456e68fe",
+      "mask_sha256": "850105c137a3d0e21e9d96605899695f5b28d22b07ba49ae821de59e6b562dc9",
+      "geometry_fingerprint": "8be45d606932bb79215551e0eeac5153f70318faaeda3f12c1dafc88b9fb4d7e",
+      "mask_role": "model_prediction",
+      "parent_segmentation_result_id": "12345678-1234-4567-890a-123456789abc",
+      "target_label": 1
+    },
+    "geometry": {
+      "shape": [
+        33,
+        33,
+        97
+      ],
+      "array_axis_order": "nifti_i_j_k",
+      "world_convention": "RAS",
+      "world_unit": "mm",
+      "affine": [
+        [
+          0.0,
+          0.0,
+          -1.0,
+          48.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0,
+          16.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          -16.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "parameters": {
+      "plane_pitch_mm": 0.5,
+      "plane_radius_mm": 8.0,
+      "sample_step_mm": 1.0,
+      "reference_inner_mm": 4.0,
+      "reference_outer_mm": 8.0,
+      "minimum_reference_samples_each_side": 4,
+      "area_ratio_trigger": 0.65,
+      "minimum_candidate_sections": 2,
+      "junction_exclusion_mm": 5.0
+    },
+    "parameter_status": "unvalidated_research_parameters",
+    "parameters_sha256": "e42b2183ba6a7f42ea2bc9128fd4b8835b396162a336ae7062bfa47b7f4717ba",
+    "branch_geometry_sha256": "ca27d5998adad3fa83e25ce9805edad099ac8ff04f9c351841a0a4f852c7832d",
+    "candidates": [],
+    "branches": [
+      {
+        "branch_id": "main",
+        "sections": [
+          {
+            "s_mm": 0.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              4.0
+            ],
+            "world_ras_mm": [
+              44.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 1.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              5.0
+            ],
+            "world_ras_mm": [
+              43.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 2.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              6.0
+            ],
+            "world_ras_mm": [
+              42.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 3.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              7.0
+            ],
+            "world_ras_mm": [
+              41.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 4.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              8.0
+            ],
+            "world_ras_mm": [
+              40.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 5.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              9.0
+            ],
+            "world_ras_mm": [
+              39.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 6.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              10.0
+            ],
+            "world_ras_mm": [
+              38.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 7.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              11.0
+            ],
+            "world_ras_mm": [
+              37.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              0,
+              5
+            ]
+          },
+          {
+            "s_mm": 8.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              12.0
+            ],
+            "world_ras_mm": [
+              36.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              1,
+              5
+            ]
+          },
+          {
+            "s_mm": 9.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              13.0
+            ],
+            "world_ras_mm": [
+              35.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              2,
+              5
+            ]
+          },
+          {
+            "s_mm": 10.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              14.0
+            ],
+            "world_ras_mm": [
+              34.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              3,
+              5
+            ]
+          },
+          {
+            "s_mm": 11.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              15.0
+            ],
+            "world_ras_mm": [
+              33.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              4,
+              5
+            ]
+          },
+          {
+            "s_mm": 12.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              16.0
+            ],
+            "world_ras_mm": [
+              32.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 13.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              17.0
+            ],
+            "world_ras_mm": [
+              31.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "evaluable_candidate_only",
+            "reason": null,
+            "reference_samples_each_side": [
+              5,
+              5
+            ]
+          },
+          {
+            "s_mm": 14.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              18.0
+            ],
+            "world_ras_mm": [
+              30.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              4
+            ]
+          },
+          {
+            "s_mm": 15.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              19.0
+            ],
+            "world_ras_mm": [
+              29.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              3
+            ]
+          },
+          {
+            "s_mm": 16.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              20.0
+            ],
+            "world_ras_mm": [
+              28.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              2
+            ]
+          },
+          {
+            "s_mm": 17.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              21.0
+            ],
+            "world_ras_mm": [
+              27.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              1
+            ]
+          },
+          {
+            "s_mm": 18.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              22.0
+            ],
+            "world_ras_mm": [
+              26.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 19.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              23.0
+            ],
+            "world_ras_mm": [
+              25.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 20.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              24.0
+            ],
+            "world_ras_mm": [
+              24.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 21.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              25.0
+            ],
+            "world_ras_mm": [
+              23.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": 324,
+            "diagnostic_area_mm2": 81.0,
+            "plane_components": 1,
+            "status": "abstained",
+            "reason": "insufficient_bidirectional_reference",
+            "reference_samples_each_side": [
+              5,
+              0
+            ]
+          },
+          {
+            "s_mm": 22.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              26.0
+            ],
+            "world_ras_mm": [
+              22.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 23.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              27.0
+            ],
+            "world_ras_mm": [
+              21.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 24.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              28.0
+            ],
+            "world_ras_mm": [
+              20.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 25.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              29.0
+            ],
+            "world_ras_mm": [
+              19.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          }
+        ],
+        "evaluable_sections": 2,
+        "abstained_sections": 24
+      }
+    ],
+    "status": "no_candidates_in_evaluable_sections",
+    "reason": null
+  },
+  "abstained_preview": {
+    "schema_version": "experimental-candidates/1.0",
+    "algorithm": {
+      "id": "experimental-mask-profile",
+      "version": "0.1.0"
+    },
+    "notice": "EXPERIMENTAL \u2014 NOT A DIAGNOSIS",
+    "measurement_status": "measurement_unavailable_no_validated_gate",
+    "source": {
+      "source_sha256": "c75d282c49880d79c4e81a80ae4bafb1d8f6d527066745ab6e447bdb456e68fe",
+      "mask_sha256": "850105c137a3d0e21e9d96605899695f5b28d22b07ba49ae821de59e6b562dc9",
+      "geometry_fingerprint": "8be45d606932bb79215551e0eeac5153f70318faaeda3f12c1dafc88b9fb4d7e",
+      "mask_role": "model_prediction",
+      "parent_segmentation_result_id": "12345678-1234-4567-890a-123456789abc",
+      "target_label": 1
+    },
+    "geometry": {
+      "shape": [
+        33,
+        33,
+        97
+      ],
+      "array_axis_order": "nifti_i_j_k",
+      "world_convention": "RAS",
+      "world_unit": "mm",
+      "affine": [
+        [
+          0.0,
+          0.0,
+          -1.0,
+          48.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0,
+          16.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          -16.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "parameters": {
+      "plane_pitch_mm": 0.5,
+      "plane_radius_mm": 8.0,
+      "sample_step_mm": 1.0,
+      "reference_inner_mm": 4.0,
+      "reference_outer_mm": 8.0,
+      "minimum_reference_samples_each_side": 4,
+      "area_ratio_trigger": 0.65,
+      "minimum_candidate_sections": 2,
+      "junction_exclusion_mm": 5.0
+    },
+    "parameter_status": "unvalidated_research_parameters",
+    "parameters_sha256": "e42b2183ba6a7f42ea2bc9128fd4b8835b396162a336ae7062bfa47b7f4717ba",
+    "branch_geometry_sha256": "92a1fd9f3f2b9bd92d2f2ad8cdd3bffc550d07ffe598e1647713b208bac8966c",
+    "candidates": [],
+    "branches": [
+      {
+        "branch_id": "main",
+        "sections": [
+          {
+            "s_mm": 0.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              44.0
+            ],
+            "world_ras_mm": [
+              4.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 1.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              45.0
+            ],
+            "world_ras_mm": [
+              3.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 2.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              46.0
+            ],
+            "world_ras_mm": [
+              2.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 3.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              47.0
+            ],
+            "world_ras_mm": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 4.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              48.0
+            ],
+            "world_ras_mm": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 5.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              49.0
+            ],
+            "world_ras_mm": [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          },
+          {
+            "s_mm": 6.0,
+            "sample_ijk": [
+              16.0,
+              16.0,
+              50.0
+            ],
+            "world_ras_mm": [
+              -2.0,
+              0.0,
+              0.0
+            ],
+            "pixel_count": null,
+            "diagnostic_area_mm2": null,
+            "plane_components": null,
+            "status": "abstained",
+            "reason": "endpoint_exclusion",
+            "reference_samples_each_side": [
+              0,
+              0
+            ]
+          }
+        ],
+        "evaluable_sections": 0,
+        "abstained_sections": 7
+      }
+    ],
+    "status": "abstained",
+    "reason": "no_evaluable_reference_support"
+  }
+}

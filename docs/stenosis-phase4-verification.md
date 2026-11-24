@@ -1,6 +1,6 @@
 # Milestone 3, Phase 4 — implementation and verification
 
-Date: 2026-10-31. Repository: `F:/Documents/artery_demo`.
+Date: 2026-10-31. Repository: `<REPOSITORY_ROOT>`.
 This is implementation evidence, not a clinical or genuine-model XAI report.
 
 ## A. Implementation summary
@@ -28,7 +28,7 @@ The available local step-700 handoff checkpoint is 1,095,859 bytes, SHA-256
 `e208fa586bb9bb50dc77b913caa0355a547bad529f9f0d61df17880b2efc5254` at:
 
 ```text
-F:/Documents/artery_demo/model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt
+<REPOSITORY_ROOT>/model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt
 ```
 
 Its hash was checked without deserializing or running it. It is a segmentation
@@ -156,7 +156,7 @@ workspace bind mounts. Existing conftest created/dropped a unique test schema an
 temp uploads/outputs. The container and its anonymous volume were removed after
 verification. Application DB credentials/configuration were never used.
 
-Backend command from `F:/Documents/artery_demo/backend`:
+Backend command from `<REPOSITORY_ROOT>/backend`:
 
 ```powershell
 @'
@@ -189,13 +189,13 @@ Results respectively: **51 passed**, 29.81s; **255 passed, 2 skipped, 2 deselect
 must not be added together.** An earlier full run before those three additions
 passed 493 tests; the final 496 result supersedes it.
 
-Frontend commands from `F:/Documents/artery_demo/frontend-react`:
+Frontend commands from `<REPOSITORY_ROOT>/frontend-react`:
 
 ```powershell
 node --test tests/explanations.test.js
 npm test
 npm run lint
-npm run build -- --outDir C:/Users/vimzz/AppData/Local/Temp/vascuai-phase4-verification-dyfo5ha4/build-reviewed
+npm run build -- --outDir <LOCAL_TOOL_PATH>
 ```
 
 Initial focused unit result: **34 passed**. After adding the asymmetric-scale
@@ -206,11 +206,11 @@ large codec/NiiVue chunk warnings and the expected external-output warning remai
 Build outputs are external; no existing dist directory was overwritten.
 
 Browser commands from
-`C:/Users/vimzz/AppData/Local/Temp/vascuai-phase4-verification-dyfo5ha4`:
+`<LOCAL_TOOL_PATH>`:
 
 ```powershell
-node F:/Documents/artery_demo/frontend-react/node_modules/@playwright/test/cli.js test --config C:/Users/vimzz/AppData/Local/Temp/vascuai-phase4-verification-dyfo5ha4/playwright.config.cjs explanations.spec.js
-node F:/Documents/artery_demo/frontend-react/node_modules/@playwright/test/cli.js test --config C:/Users/vimzz/AppData/Local/Temp/vascuai-phase4-verification-dyfo5ha4/playwright.config.cjs explanations.spec.js stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js
+node <REPOSITORY_ROOT>/frontend-react/node_modules/@playwright/test/cli.js test --config <LOCAL_TOOL_PATH> explanations.spec.js
+node <REPOSITORY_ROOT>/frontend-react/node_modules/@playwright/test/cli.js test --config <LOCAL_TOOL_PATH> explanations.spec.js stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js
 ```
 
 Focused result after correction: **13 passed**, zero failures/skips, 32.9s.
@@ -295,7 +295,7 @@ explanation API response. Existing safety assertions are unchanged.
 
 ### New Phase-4 files (15)
 
-Paths relative to `F:/Documents/artery_demo`:
+Paths relative to `<REPOSITORY_ROOT>`:
 
 ```text
 backend/app/models/stenosis_explanation.py

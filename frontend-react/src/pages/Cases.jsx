@@ -71,7 +71,7 @@ export default function Cases() {
         )}
       </PageHeader>
       <div className="segmented">
-        {["All", "Pending", "Processing", "Complete", "Failed"].map((s) => (
+        {["All", "Pending", "Processing", "Awaiting review", "Changes requested", "Complete", "Failed"].map((s) => (
           <button
             key={s}
             className={status === s ? "selected" : ""}

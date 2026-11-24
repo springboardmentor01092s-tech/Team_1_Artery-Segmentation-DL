@@ -59,7 +59,7 @@ temporary server. No real medical volumes, checkpoints or predictions were read.
 ### Independent synthetic rendering experiments
 
 Evidence root:
-`C:/Users/vimzz/AppData/Local/Temp/vascuai-viewer-rendering-b9fb631b`.
+`<LOCAL_TOOL_PATH>`.
 `experiment.mjs` records original synthetic NIfTI hashes, actual context
 attributes, texture filters, volume-data hashes, camera pixel hashes and cleanup
 in `experiment/render-experiment.json`; corresponding PNGs are alongside it.
@@ -179,8 +179,8 @@ cleanup and explicit context release, including throwing/repeated cleanup.
 Define these paths in PowerShell:
 
 ```powershell
-$qc = 'C:\Users\vimzz\AppData\Local\Temp\vascuai-viewer-rendering-b9fb631b'
-$cli = 'F:\Documents\artery_demo\frontend-react\node_modules\@playwright\test\cli.js'
+$qc = '<LOCAL_TOOL_PATH>'
+$cli = '<REPOSITORY_ROOT>\frontend-react\node_modules\@playwright\test\cli.js'
 ```
 
 From `$qc`, before application edits:
@@ -220,7 +220,7 @@ node $cli test --config "$qc\final.config.cjs" --reporter=line
   native gestures, camera reset, authentication/cancellation/freshness fallback
   workflows and repeated resource release. The opt-in real-volume spec is excluded.
 
-From `F:/Documents/artery_demo/frontend-react`:
+From `<REPOSITORY_ROOT>/frontend-react`:
 
 ```powershell
 npm test

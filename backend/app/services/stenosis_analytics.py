@@ -2,10 +2,11 @@
 from datetime import datetime, time, timezone
 
 from fastapi import HTTPException
+from app.core.quantitative_gate import VALIDATED_GATES, require_measurement_gate
 from sqlalchemy import Date, cast, func, select
 
 from app.models import Case, Patient, SegmentationResult, StenosisAnalysisJob as Job, StenosisAnalysisResult as Result, StenosisLesion as Lesion, StenosisExplanationArtifact as Explanation
-from app.schemas.stenosis import AnalysisProvenance
+from app.schemas.stenosis import AnalysisProvenance, Measurement
 from app.schemas.stenosis_reporting import AnalyticsSummary, AnalyticsFilters, AnalysisIndex, TrendResponse
 from app.services import stenosis_jobs as jobs
 from app.services.stenosis import capabilities
@@ -19,7 +20,7 @@ DEFINITIONS = {
     "current": "Completed canonical results with matching metadata/counts and a previously verified unchanged source version; excludes stale, unverified and inconsistent results.",
     "lesions": "Stored lesion rows across eligible analysis IDs; repeat real executions remain separate analyses, never distinct patients.",
     "zero_findings": "Eligible completed results with exactly zero lesion rows; not evidence of absence of stenosis.",
-    "measurements": "Presence counts only, per eligible lesion; zero is available. No numerical averages or derived narrowing.",
+    "measurements": "Gate-verified availability counts per eligible lesion, not numerical averages or derived narrowing. No gate currently qualifies, so stored non-null claims do not count as available.",
     "explanations": "Recorded metadata counts, not downloaded-file integrity, explanation quality or model performance.",
     "anatomy": "Exact provider-supplied labels grouped by analysis method/version; no inferred or harmonized anatomy.",
     "freshness": "Stat-only cached checksum observations. A cold/evicted observation is unverified; changed versions require explicit result/source verification.",
@@ -28,6 +29,25 @@ DEFINITIONS = {
 
 def now():
     return datetime.now(timezone.utc)
+
+
+def reportable_measurement_count(db, result_ids, field):
+    if not VALIDATED_GATES or not result_ids:
+        return 0
+    # Future registry admission still cannot make legacy numeric payloads count
+    # as reportable without their own matching method/source/gate evidence.
+    query = select(Lesion.payload_json["measurements"][field], Result.provenance_json).join(
+        Result, Result.id == Lesion.result_id).where(Lesion.result_id.in_(result_ids))
+    available = 0
+    for raw, provenance in db.execute(query.execution_options(yield_per=128)):
+        try:
+            measurement = Measurement.model_validate(raw)
+            if measurement.value is not None:
+                require_measurement_gate(measurement, provenance)
+                available += 1
+        except (ValueError, TypeError, KeyError):
+            continue
+    return available
 
 
 def scope(db, filters, patient_authorized):
@@ -142,7 +162,7 @@ def summary(db, filters, patient_authorized=False):
         explanation_methods = [{"label":m,"method_id":m,"method_version":v,"count":n} for m,v,n in db.execute(select(method,version,func.count())
             .where(Explanation.result_id.in_(valid)).group_by(method,version).order_by(method,version))]
     for field in ("reference_diameter","minimum_lumen_diameter","percentage_narrowing"):
-        available = db.scalar(select(func.count()).select_from(Lesion).where(Lesion.result_id.in_(valid),Lesion.payload_json["measurements"][field]["value"].as_float().is_not(None))) if valid else 0
+        available = reportable_measurement_count(db, valid, field)
         measures.append({"field":field,"available":available,"unavailable":current["lesions"]-available})
     detection=next(item for item in capabilities().capabilities if item.id=="stenosis_detection")
     return AnalyticsSummary(contract_version="1.0",generated_at=now(),filters=filters,execution_available=detection.execution_permitted,

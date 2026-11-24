@@ -17,6 +17,7 @@ from app.schemas.evaluation import EvaluationDocument, CaseEvaluation
 from app.services.audit import record_event
 from app.core.evaluation_upload import MAX_EVALUATION_FILE_BYTES
 from app.services.source_fingerprint import file_version, source_sha256
+from app.services.evaluation_statistics import supplemental_metrics
 
 MAX_ARTIFACT_BYTES = MAX_EVALUATION_FILE_BYTES
 MAX_HISTORY_OFFSET = 1000000
@@ -241,13 +242,14 @@ def summary(row, cases):
                 exclusions=[dict(case_id=c.case_id, reason=c.exclusion_reason) for c in cases if c.exclusion_reason],
                 headline_aggregation="macro_unweighted_per_case", macro_metrics=macro, macro_denominators=denominators,
                 pooled_micro_metrics=pooled, pooled_status="available" if pooled is not None else "unavailable_without_complete_included_confusion_counts",
-                metric_formulas=FORMULAS, zero_denominator="null", undefined_macro_policy="omit_undefined_per_metric_and_report_count")
+                metric_formulas=FORMULAS, zero_denominator="null", undefined_macro_policy="omit_undefined_per_metric_and_report_count",
+                supplemental_metrics=supplemental_metrics(cases))
 
 
 def case_details(row, cases):
     return dict(**identity(row), metric_definitions=row.metadata_json["metric_definitions"], metric_formulas=FORMULAS,
                 undefined_macro_policy="omit_undefined_per_metric_and_report_count",
-                cases=[c.model_dump(mode="json") for c in cases])
+                cases=[c.model_dump(mode="json") for c in cases], supplemental_metrics=supplemental_metrics(cases))
 
 
 def comparison(db, identifiers):
@@ -292,10 +294,7 @@ def history_members(db, row, access=None):
     return ids
 
 
-def model_runs(db, model_id, *, limit=20, offset=0):
-    model = db.get(EvaluationModel, model_id)
-    if model is None:
-        raise HTTPException(404, "Model not found")
+def readable_evaluations():
     # Exclude an evaluation if ANY member is outside the very same SQL scope
     # used by the protected case lookup. Denied records never occupy an offset
     # or the look-ahead slot. No detailed case payloads are reconstructed.
@@ -303,8 +302,29 @@ def model_runs(db, model_id, *, limit=20, offset=0):
     denied_member = select(EvaluationCase.case_id).where(
         EvaluationCase.evaluation_id == Evaluation.id,
         EvaluationCase.case_id.not_in(readable_ids)).correlate(Evaluation).exists()
-    rows = db.scalars(select(Evaluation).where(Evaluation.model_id == model_id)
-        .where(~denied_member)
+    return select(Evaluation).where(~denied_member)
+
+
+def list_evaluations(db, *, limit=20, offset=0):
+    rows = db.scalars(readable_evaluations()
+        .order_by(Evaluation.created_at, Evaluation.id).offset(offset).limit(limit + 1)).all()
+    items = []
+    access = {}
+    for row in rows:
+        ids = history_members(db, row, access)
+        if len(items) < limit:
+            items.append(dict(**identity(row), case_ids=ids))
+    next_offset = offset + limit if len(rows) > limit else None
+    capped = next_offset is not None and next_offset > MAX_HISTORY_OFFSET
+    return dict(items=items, limit=limit, offset=offset,
+                next_offset=None if capped else next_offset, offset_limit_reached=capped)
+
+
+def model_runs(db, model_id, *, limit=20, offset=0):
+    model = db.get(EvaluationModel, model_id)
+    if model is None:
+        raise HTTPException(404, "Model not found")
+    rows = db.scalars(readable_evaluations().where(Evaluation.model_id == model_id)
         .order_by(Evaluation.created_at, Evaluation.id).offset(offset).limit(limit + 1)).all()
     more = len(rows) > limit
     evaluations = []

@@ -1,6 +1,7 @@
 import { StenosisContractError } from "./stenosis-contract.js";
 import { geometryFingerprint, isHash, isUUID, MAX_LESIONS, validateGeometry, validateLocation } from "../lib/stenosis-results.js";
 import { sameAffine, MAX_TRANSFER_BYTES } from "../lib/volume-geometry.js";
+import { requireMeasurementGate } from "../lib/quantitative-gate.js";
 
 const fail = message => { throw new StenosisContractError(message || "Malformed stenosis result. No findings were displayed."); };
 const text = value => typeof value === "string" && value.trim().length > 0 && value.length <= 1000;
@@ -8,7 +9,7 @@ const identifier = value => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9
 const reasons = new Set(["not_implemented", "not_integrated", "disabled", "not_run", "failed", "not_provided", "not_applicable", "unsupported_geometry"]);
 const reason = value => Boolean(value && reasons.has(value.code) && text(value.message));
 
-function measurement(value, unit) {
+function measurement(value, unit, provenance) {
   if (!value || value.unit !== unit) fail();
   if (value.value === null) { if (!reason(value.unavailable_reason)) fail(); }
   else if (!Number.isFinite(value.value) || value.value < 0 || value.unavailable_reason !== null
@@ -17,6 +18,10 @@ function measurement(value, unit) {
   // but permits each independently when a value is unavailable. Preserve that
   // optional provenance instead of rejecting an otherwise valid whole result.
   for (const field of ['method_id', 'method_version']) if (value[field] != null && !identifier(value[field])) fail();
+  if (value.value !== null) {
+    try { requireMeasurementGate(value, provenance); }
+    catch (error) { fail(error.message); }
+  }
 }
 
 export async function validateResultResponse(data, caseId, analysisId) {
@@ -40,7 +45,7 @@ export async function validateResultResponse(data, caseId, analysisId) {
     ids.add(lesion.lesion_id); validateLocation(lesion.location, geometry);
     for (const field of ["vessel_label", "vessel_id", "anatomical_location", "anatomical_method", "external_provider_id"]) if (lesion[field] != null && !text(lesion[field])) fail();
     if ((lesion.location == null) !== reason(lesion.localization_unavailable_reason)) fail();
-    for (const [field, unit] of [["reference_diameter", "mm"], ["minimum_lumen_diameter", "mm"], ["percentage_narrowing", "percent"]]) measurement(lesion.measurements?.[field], unit);
+    for (const [field, unit] of [["reference_diameter", "mm"], ["minimum_lumen_diameter", "mm"], ["percentage_narrowing", "percent"]]) measurement(lesion.measurements?.[field], unit, provenance);
     if (!lesion.severity || (lesion.severity.category === null ? !reason(lesion.severity.unavailable_reason) : !text(lesion.severity.category) || !text(lesion.severity.method_id) || !text(lesion.severity.method_version) || lesion.severity.unavailable_reason !== null)) fail();
     const explanation = lesion.explanation;
     if (!explanation || (explanation.artifact_id == null ? !reason(explanation.unavailable_reason)

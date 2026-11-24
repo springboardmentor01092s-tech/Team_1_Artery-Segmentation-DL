@@ -9,6 +9,7 @@ import numpy as np
 from sqlalchemy import select
 
 from app.core.config import settings
+from app.core.quantitative_gate import QuantitativeGateError, require_reportable_result
 from app.models import Case, SegmentationResult, StenosisAnalysisJob, StenosisAnalysisResult, StenosisLesion
 from app.routers.cases import UPLOAD_DIR, VOLUME_DIR
 from app.routers.segmentation import snapshot_source, current_source_sha256
@@ -52,6 +53,8 @@ class SQLResultStore:
             return None
         lesions = db.scalars(select(StenosisLesion).where(StenosisLesion.result_id == row.id).order_by(StenosisLesion.lesion_id)).all()
         try:
+            require_reportable_result({"provenance": row.provenance_json,
+                                       "lesions": [item.payload_json for item in lesions]})
             result = AnalysisResult(contract_version=row.schema_version, analysis_id=row.analysis_id,
                 state=row.status, provenance=row.provenance_json, lesions=[LesionResult.model_validate(item.payload_json) for item in lesions], unavailable_reason=None)
             if (len(lesions) != row.finding_count or len(lesions) > MAX_LESIONS
@@ -65,6 +68,8 @@ class SQLResultStore:
                 if lesion.candidate_region and lesion.candidate_region.geometry_fingerprint != row.geometry_fingerprint:
                     raise ValueError()
             return result
+        except QuantitativeGateError as exc:
+            raise error("quantitative_gate_unavailable", str(exc)) from None
         except (ValueError, TypeError, KeyError):
             raise error("result_integrity_failure", "The stored result is incomplete or inconsistent; no findings were returned.") from None
 
@@ -143,6 +148,12 @@ def cleanup_regions(directory):
 
 def persist_completed_result(db, job_id, token, payload, runtime, region_inputs=None, *, explanations=()):
     """Internal worker entry point. No public result-write endpoint exists."""
+    try:
+        require_reportable_result(payload)
+    except QuantitativeGateError as exc:
+        # Before locks, file reads, artifact copies or any write, including when
+        # a caller used model_construct/model_copy to bypass field validation.
+        raise error("quantitative_gate_unavailable", str(exc)) from None
     directory = None
     committed = False
     explanation_directories = []
@@ -219,6 +230,10 @@ def retrieve_result(db, case_id, analysis_id):
     if case is None or not jobs.fresh(job, case, parent, current_source_sha256(case)):
         raise error("source_changed", "The result belongs to a stale or unverifiable source; findings were not returned.")
     result = SQLResultStore().load(db, job.result_reference) if job.result_reference else None
+    try:
+        require_reportable_result(result)
+    except QuantitativeGateError as exc:
+        raise error("quantitative_gate_unavailable", str(exc)) from None
     if (result is None or str(result.analysis_id) != job.id or result.provenance.source != jobs.source_for(job)
             or (result.provenance.method_id, result.provenance.method_version, result.provenance.checkpoint_sha256)
             != (job.method_id, job.method_version, job.checkpoint_sha256)):

@@ -1,8 +1,9 @@
 FROM python:3.14-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
-COPY backend/requirements.txt backend/requirements-model.txt ./
+COPY backend/requirements.txt backend/requirements-model.txt backend/requirements-segresnet.txt ./
 ARG INSTALL_MODEL=false
+ARG INSTALL_SEGRESNET=false
 # Validate every fixture target before deleting; keep installation and cleanup in one layer.
 RUN <<'INSTALL'
 set -eu
@@ -138,6 +139,10 @@ mkdir -p /data/uploads /data/outputs
 chown -R 10001:10001 /data
 INSTALL
 RUN if [ "$INSTALL_MODEL" = "true" ]; then pip install --no-cache-dir -r requirements-model.txt --index-url https://download.pytorch.org/whl/cpu; fi
+RUN if [ "$INSTALL_SEGRESNET" = "true" ]; then \
+      test "$INSTALL_MODEL" = "true" || { echo "SegResNet requires INSTALL_MODEL=true"; exit 1; }; \
+      pip install --no-cache-dir --no-deps -r requirements-segresnet.txt && pip check; \
+    fi
 COPY backend/app/ ./app/
 COPY backend/migrations/ ./migrations/
 COPY backend/alembic.ini ./

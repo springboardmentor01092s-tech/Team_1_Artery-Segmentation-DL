@@ -24,6 +24,8 @@ import { casesApi } from "../api/cases";
 import { useRemote } from "../hooks/useRemote";
 import { useCase } from "../hooks/useCase";
 import { downloadRecords } from "../lib/exports";
+import CaseWorkflow from '../components/CaseWorkflow';
+import { useCaseWorkflow } from '../hooks/useCaseWorkflow';
 
 export default function Reports() {
   const { data, loading, error, reload } = useRemote(casesApi.list);
@@ -65,7 +67,7 @@ export default function Reports() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          {["All", "Pending", "Processing", "Complete", "Failed"].map((s) => (
+          {["All", "Pending", "Processing", "Awaiting review", "Changes requested", "Complete", "Failed"].map((s) => (
             <option key={s} value={s}>
               {s === "All" ? "All statuses" : s}
             </option>
@@ -159,6 +161,7 @@ export default function Reports() {
 }
 export function ReportPreview() {
   const { id } = useParams();
+  const workflow = useCaseWorkflow(id);
   const { data: item, loading, error, reload } = useCase();
   const [preparedAt] = useState(() => new Date().toISOString());
   return (
@@ -177,14 +180,14 @@ export function ReportPreview() {
           <>
             <button
               className="btn btn-ghost"
-              onClick={() => downloadRecords([item], "json")}
+              onClick={() => downloadRecords([{...item, status:workflow.data?.caseStatus || 'Unverified'}], "json")}
             >
               <Download size={14} />
               JSON
             </button>
             <button
               className="btn btn-ghost"
-              onClick={() => downloadRecords([item], "csv")}
+              onClick={() => downloadRecords([{...item, status:workflow.data?.caseStatus || 'Unverified'}], "csv")}
             >
               <Download size={14} />
               CSV
@@ -221,7 +224,7 @@ export function ReportPreview() {
               ["Anatomical region", item.region],
               ["Scan date", item.scanDate ? formatDate(item.scanDate) : null],
               ["Case created", formatDate(item.createdAt, true)],
-              ["Case status", item.status],
+              ["Case status", workflow.data?.caseStatus || 'Unverified'],
             ]}
           />
           <h3>02 / Input availability</h3>
@@ -258,6 +261,7 @@ export function ReportPreview() {
           </p>
         </article>
       )}
+      {!loading && !error && <CaseWorkflow caseId={id} workflow={workflow}/>}
     </AppShell>
   );
 }

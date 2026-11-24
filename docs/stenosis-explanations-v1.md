@@ -21,7 +21,7 @@ No separate advanced or stenosis model implementation was found in the inspected
 application/research Python sources.
 
 The available handoff checkpoint is
-`F:/Documents/artery_demo/model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt`
+`<REPOSITORY_ROOT>/model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt`
 (1,095,859 bytes), SHA-256
 `e208fa586bb9bb50dc77b913caa0355a547bad529f9f0d61df17880b2efc5254`.
 That identifies bytes, not a validated stenosis predictor or resolved training

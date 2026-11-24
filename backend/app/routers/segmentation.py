@@ -1,5 +1,6 @@
 """Synchronous, authenticated research inference on a case's stored CT volume."""
 from pathlib import Path
+from datetime import datetime, timezone
 from threading import BoundedSemaphore
 from typing import Literal
 from uuid import UUID, uuid4
@@ -30,15 +31,19 @@ def execute_inference(source: Path, destination: Path, threshold: float):
     try:
         import torch
         from app.services.segmentation.inference import InferenceError, run_inference
+        if settings.VASCULAI_MODEL_ARCHITECTURE == "segresnet-1mm-v1":
+            from app.services.segmentation.segresnet import run_inference
     except (ImportError, OSError) as exc:
-        raise HTTPException(503, "Inference runtime unavailable; install backend/requirements-model.txt.") from exc
+        raise HTTPException(503, "Inference runtime unavailable; install backend/requirements-model.txt and, for SegResNet, requirements-segresnet.txt.") from exc
     torch.set_num_threads(settings.VASCULAI_MODEL_THREADS)
     try:
+        identity = ({"expected_checkpoint_sha256": settings.VASCULAI_MODEL_CHECKPOINT_SHA256}
+                    if settings.VASCULAI_MODEL_ARCHITECTURE == "segresnet-1mm-v1" else {})
         return run_inference(source, settings.VASCULAI_MODEL_CHECKPOINT, destination,
                              threshold=threshold, batch_size=settings.VASCULAI_MODEL_BATCH_SIZE,
                              device=settings.VASCULAI_MODEL_DEVICE,
                              max_voxels=min(settings.MAX_VOLUME_VOXELS, settings.VASCULAI_MODEL_MAX_VOXELS),
-                             max_bytes=settings.MAX_VOLUME_UNCOMPRESSED_MB * 1024 * 1024)
+                             max_bytes=settings.MAX_VOLUME_UNCOMPRESSED_MB * 1024 * 1024, **identity)
     except InferenceError as exc:
         raise HTTPException(exc.status_code, str(exc)) from exc
 
@@ -50,11 +55,30 @@ def readable_cases():
     return select(Case)
 
 
-def get_case(db, case_id):
-    case = db.scalar(readable_cases().where(Case.id == case_id))
+def get_case(db, case_id, lock=False):
+    statement = readable_cases().where(Case.id == case_id)
+    case = db.scalar(statement.with_for_update() if lock else statement)
     if case is None:
         raise HTTPException(404, "Case not found")
     return case
+
+
+def model_threshold():
+    # The SegResNet recipe was evaluated at exactly 0.5; do not inherit the
+    # legacy 0.70 default or silently retune the new checkpoint.
+    if settings.VASCULAI_MODEL_ARCHITECTURE == "segresnet-1mm-v1":
+        return 0.5
+    return settings.VASCULAI_MODEL_THRESHOLD
+
+
+@router.get("/{case_id}/segmentation-config")
+def segmentation_config(case_id: int, current_user: AuthenticatedCaseReader, db: DatabaseSession):
+    get_case(db, case_id)
+    return {"architecture": settings.VASCULAI_MODEL_ARCHITECTURE,
+            "default_threshold": model_threshold(),
+            "threshold_adjustable": settings.VASCULAI_MODEL_ARCHITECTURE == "smallunet3d",
+            "status": "configured_not_verified" if settings.VASCULAI_MODEL_CHECKPOINT else "not_configured",
+            "experimental": True, "clinical_validation": False}
 
 
 def result_directory(result_id):
@@ -114,6 +138,8 @@ def create_segmentation(case_id: int, request: SegmentationRequest,
         raise HTTPException(404, "Input volume is missing from storage.")
     if not settings.VASCULAI_MODEL_CHECKPOINT:
         raise HTTPException(503, "Model checkpoint is not configured; set VASCULAI_MODEL_CHECKPOINT.")
+    if settings.VASCULAI_MODEL_ARCHITECTURE == "segresnet-1mm-v1" and request.threshold not in (None, .5):
+        raise HTTPException(400, "The frozen SegResNet recipe requires threshold 0.5; no retuning is enabled.")
     result_id = str(uuid4())
     directory = result_directory(result_id)
     if not inference_slot.acquire(blocking=False):
@@ -124,16 +150,18 @@ def create_segmentation(case_id: int, request: SegmentationRequest,
     try:
         db.rollback()
         initial_checksum = source_sha256(source)
-        metadata = execute_inference(source, directory, request.threshold if request.threshold is not None else settings.VASCULAI_MODEL_THRESHOLD)
+        metadata = execute_inference(source, directory, request.threshold if request.threshold is not None else model_threshold())
         db.expire_all()
-        case = get_case(db, case_id)
+        case = get_case(db, case_id, lock=True)
         checksum = current_source_sha256(case)
         if case.volume_path != source_relative or checksum != initial_checksum or metadata.get("source_sha256") != initial_checksum:
             raise HTTPException(409, "Volume changed during inference; run again on the current upload.")
         result = SegmentationResult(id=result_id, case_id=case_id,
                                     source_volume_path=source_relative,
-                                    metadata_json=metadata, created_by=actor_id)
+                                    metadata_json=metadata, created_by=actor_id,
+                                    created_at=datetime.now(timezone.utc))
         db.add(result)
+        case.status = "awaiting_review"
         record_event(db, "case.segmentation_created", actor_id, case_id)
         db.flush()
         response = response_for(result, case, checksum)

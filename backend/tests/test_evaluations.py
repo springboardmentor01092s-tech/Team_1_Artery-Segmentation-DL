@@ -115,6 +115,28 @@ def test_macro_is_case_unweighted_and_pooled_is_separate(client,setup):
     assert details["cases"][0]["reference_sha256"]=="d"*64
 
 
+def test_supplemental_metrics_are_read_only_and_do_not_change_frozen_import(client, setup, db):
+    document = deepcopy(setup["document"])
+    document["cases"][0]["confusion_counts"]["tn"] = 7
+    document["cases"][1]["confusion_counts"]["tn"] = 90
+    artifact, result = imported(client, setup, document)
+    stored = db.get(Evaluation, result["id"])
+    before = (stored.payload_sha256, stored.history_sha256, deepcopy(stored.metadata_json))
+    value = result["supplemental_metrics"]
+    assert value["macro_metrics"]["voxel_accuracy"] == pytest.approx((8/9 + 99/100)/2)
+    assert value["pooled_micro_metrics"]["voxel_accuracy"] == pytest.approx(107/109)
+    assert value["macro_metrics"]["sensitivity"] == result["macro_metrics"]["recall"]
+    assert value["macro_metrics"]["f1_score"] == result["macro_metrics"]["dice"]
+    details = client.get(f"/api/v1/evaluations/{result['id']}/cases", headers=setup["headers"])
+    assert details.status_code == 200
+    assert details.json()["supplemental_metrics"] == value
+    item, parsed = service.read_artifact(db, artifact["id"])
+    assert parsed.schema_version == "offline-evaluation/1.0"
+    assert "supplemental_metrics" not in parsed.model_dump()
+    db.refresh(stored)
+    assert before == (stored.payload_sha256, stored.history_sha256, stored.metadata_json)
+
+
 def test_undefined_and_excluded_cases_do_not_seed_metrics(client,setup):
     doc=deepcopy(setup["document"])
     for row in doc["cases"]:

@@ -34,6 +34,9 @@ export default function Sidebar({ onClose, hidden }) {
       [
         ["Overview", "/dashboard", LayoutDashboard],
         ...(isRole(...CLINICAL_WRITERS)
+          ? [["Assigned CT review", "/review-assignments", ShieldCheck], ["Third-reader adjudication", "/review-adjudications", ShieldCheck]]
+          : []),
+        ...(isRole(...CLINICAL_WRITERS)
           ? [["Patients", "/patients", Users]]
           : []),
         ["Cases", "/cases", FolderOpen],
@@ -49,6 +52,7 @@ export default function Sidebar({ onClose, hidden }) {
             [
               ["Datasets", "/datasets", Database],
               ["Model evaluation", "/evaluation", ChartNoAxesCombined],
+              ["Reference profiles", "/research/reference-profiles", ScanLine],
               ["Experiments", "/experiments", FlaskConical],
               ["Model registry", "/models", Cpu],
             ],

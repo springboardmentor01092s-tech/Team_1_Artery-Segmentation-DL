@@ -32,18 +32,18 @@ does not replace them or introduce an evaluation methodology.
 | Segmentation performance reporting | Partial | Reproducible saved two-case metrics exist; they do not establish full-fold, full-dataset or clinical performance. |
 
 Implementation evidence:
-[model.py](F:/Documents/artery_demo/backend/app/services/segmentation/model.py),
-[inference.py](F:/Documents/artery_demo/backend/app/services/segmentation/inference.py),
-[integration guide](F:/Documents/artery_demo/backend/app/services/segmentation/README.md),
-and [viewer guide](F:/Documents/artery_demo/docs/frontend-segmentation-viewer.md).
+[model.py](../backend/app/services/segmentation/model.py),
+[inference.py](../backend/app/services/segmentation/inference.py),
+[integration guide](../backend/app/services/segmentation/README.md),
+and [viewer guide](../docs/frontend-segmentation-viewer.md).
 
 ## 3. Existing segmentation performance
 
 Frozen run:
-`F:/Documents/vascuai-artifacts/runs/two-case-step700-thr070-20261020T084831Z`.
+`<PRIVATE_ARTIFACT_PATH>`.
 
-The [evaluation CSV](F:/Documents/vascuai-artifacts/runs/two-case-step700-thr070-20261020T084831Z/evaluation.csv)
-and [evaluation JSON](F:/Documents/vascuai-artifacts/runs/two-case-step700-thr070-20261020T084831Z/evaluation.json)
+The [evaluation CSV](<PRIVATE_ARTIFACT_PATH>)
+and [evaluation JSON](<PRIVATE_ARTIFACT_PATH>)
 agree on every value below. Metrics are displayed to six decimal places from the
 existing results; no missing score or new volume-based evaluation was calculated.
 
@@ -53,14 +53,14 @@ existing results; no missing score or new volume-based evaluation was calculated
 | 852 | 0.105938 | 0.055931 | 0.060600 | 0.420643 | 287.783 |
 
 Durations come from
-[case-851 metadata](F:/Documents/vascuai-artifacts/runs/two-case-step700-thr070-20261020T084831Z/case-851/metadata.json)
-and [case-852 metadata](F:/Documents/vascuai-artifacts/runs/two-case-step700-thr070-20261020T084831Z/case-852/metadata.json).
+[case-851 metadata](<PRIVATE_ARTIFACT_PATH>)
+and [case-852 metadata](<PRIVATE_ARTIFACT_PATH>).
 They are recorded pipeline durations, including preparation/loading and output
 work, not isolated model-forward latency or GPU benchmarks. Process wall times
 in `execution-summary.json` are a separate measurement and are not substituted.
 
 Evaluated checkpoint:
-`F:/Documents/artery_demo/model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt`.
+`<REPOSITORY_ROOT>/model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt`.
 SHA-256: `e208fa586bb9bb50dc77b913caa0355a547bad529f9f0d61df17880b2efc5254`.
 
 The frozen protocol uses threshold **0.70**, CT clipping to [-200, 800] followed
@@ -68,7 +68,7 @@ by `(image + 200) / 1000`, 64-cubed patches, stride 32, sigmoid-then-average
 overlap aggregation, and reference foreground `label > 0`. Neither threshold
 selection nor post-processing was performed for this frozen run. Split-4
 workbook/export evidence assigns both cases to validation. The saved
-[report](F:/Documents/vascuai-artifacts/runs/two-case-step700-thr070-20261020T084831Z/report.md),
+[report](<PRIVATE_ARTIFACT_PATH>),
 `execution-protocol.json`, `verification.json`, per-case provenance and
 `SHA256SUMS.txt` retain the detailed records.
 
@@ -86,10 +86,10 @@ lineage is not fully established. No new training-history conclusion is implied.
 The archived latest/step-400, balanced/step-700, weighted/step-700 and hard-negative
 pilot/step-800 weights are **variants of SmallUNet3D**, not separate baseline and
 advanced architectures. Locations are
-`F:/Downloads/BACKUP/14.10.2026/artery_experiment_backup.zip` and
-`F:/Downloads/BACKUP/17.10.2026/artery_unet_hard_negative_pilot_step800.pt`.
+`<PRIVATE_ARTIFACT_PATH>` and
+`<PRIVATE_ARTIFACT_PATH>`.
 
-`F:/Downloads/BACKUP/17.10.2026/baseline_vs_pilot_validation.csv` contains 144
+`<PRIVATE_ARTIFACT_PATH>` contains 144
 historical rows for two checkpoint labels, cases 852-855 and 18 thresholds. It
 lacks source/checkpoint hashes and complete execution provenance; original local
 CT/reference pairs for 853-855 have not been established. The CSV alone cannot

@@ -110,8 +110,11 @@ export default function Help() {
             </p>
             <p>
               Open a case’s Segmentation tab to run the experimental 3D CT model.
-              Clinician and Admin accounts can choose a threshold from 0 to 1
-              (default 0.70) and start a synchronous run. All four case-reader
+              Clinician and Admin accounts can start a synchronous run using the
+              server's explicit model recipe. The legacy SmallUNet default is
+              0.70 and adjustable from 0 to 1; the optional SegResNet 1 mm recipe
+              fixes its threshold at 0.5. Neither is enabled without its runtime
+              and checkpoint configuration. All four case-reader
               roles can refresh saved history and securely download current masks
               and probability volumes. Stale results cannot be downloaded.
               Probabilities are not calibrated clinical confidence.
@@ -144,16 +147,38 @@ export default function Help() {
               protocol.
             </p>
             <p>
-              Segmentation evaluation may include Dice, IoU, precision, recall,
-              Hausdorff distance, and surface distance. Detection and
-              classification metrics belong in separate evaluations. No such
-              scores are available from the current API.
+              Imported offline segmentation evaluations provide Dice, IoU,
+              precision and recall when supported by their recorded evidence.
+              Headline metrics are macro averages across cases; pooled micro
+              metrics are labelled separately when confusion counts are available.
+              Missing metrics remain unavailable, not zero. When recorded
+              confusion counts support them, additional voxel accuracy,
+              specificity, sensitivity and binary F1 are calculated with their
+              own coverage denominators. Missing true-negative counts cannot
+              produce accuracy or specificity. Surface distance metrics are
+              not computed from counts; no physical distance is inferred from
+              unknown reference units or matching headers. Stenosis detection and
+              classification require separate evaluation evidence.
             </p>
             <p>
-              Dataset registration, train / validation / test manifests, model
-              registry, training jobs, and evaluation runs are not connected.
-              Saved case segmentation runs record their model and input checksums,
-              threshold, preprocessing configuration, and creation time.
+              Open Model evaluation to inspect imported case results, compare
+              evaluations with identical case sets, and review recorded model-run
+              references. These historical records are not a live training runner
+              or serving registry. Dataset registration, a serving model registry
+              and training-job controls are not connected. Saved case segmentation
+              runs record their model and input checksums, threshold, preprocessing
+              configuration, and creation time.
+            </p>
+            <p>
+              Admin and Data Scientist accounts can upload an existing
+              offline-evaluation/1.0 JSON file (at most 2 MiB) in Model evaluation,
+              verify the returned stored artifact ID and checksum, then import
+              that artifact. Case IDs must already map to the actual source CTs;
+              dataset case numbers are not automatically application IDs. Import
+              does not train or run a model. A failed import can retry the same
+              artifact ID without another upload. Conflicting metadata requires
+              review. Evaluation detail also provides CSV, JSON and browser
+              Print / Save PDF, with macro and pooled micro results kept distinct.
             </p>
           </section>
           <section className="help-section" id="exports">
@@ -168,6 +193,26 @@ export default function Help() {
               measurements. The preparation date is an export timestamp, not an
               analysis timestamp. Server storage paths are excluded.
             </p>
+          </section>
+          <section className="help-section" id="independent-review">
+            <h2>Independent CT review and unverified adjudication</h2>
+            <p>Assigned R1/R2 accounts use Assigned CT review. The embedded viewer
+              verifies original CT bytes and native geometry and provides no AI masks
+              or other reader information. Capture seven native-IJK landmarks and
+              enter manual method/evidence in the formal worksheet. Null measurements
+              keep explicit unavailable reasons. Save privately to the server or use
+              the separate source-bound local JSON feature. A revision conflict needs
+              an explicit reload; unsaved text is never silently merged.</p>
+            <p>Explicit submission freezes the saved annotation and its history.
+              The coordinator may assign a separate third Clinician only after both
+              reviews are frozen and current, separately verified credential evidence
+              exists. There is no self-certification endpoint and no real credential
+              is seeded. Third-reader adjudication provides the original CT download,
+              both frozen reviews, manual correspondence, unresolved outcomes and
+              immutable hash-linked decisions. Amendments need a separately versioned
+              process. Clinical and training-release authorization remain false in
+              every state; these records cannot enter ordinary clinical exports or
+              automatically become expert ground truth.</p>
           </section>
           <section className="help-section" id="access">
             <h2>06 / Roles & access</h2>

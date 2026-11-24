@@ -53,7 +53,15 @@ export async function installApi(
       body: method === "POST" || method === "PATCH" ? req.postData() : null,
     });
     const json = (body, status = 200) => route.fulfill({ status, json: body });
+    if (path === '/evaluations' && method === 'GET') return json({ items: [], limit: 20, offset: 0, next_offset: null, offset_limit_reached: false });
     if (path === "/auth/me" && method === "GET") return json(user);
+    const workflowMatch = path.match(/^\/cases\/(\d+)\/workflow$/);
+    if (workflowMatch && method === 'GET') {
+      const item = cases.find(c => c.id === Number(workflowMatch[1]));
+      if (!item) return json({detail:'Case not found'},404);
+      return json({case_id:item.id,case_status:'pending',model_analysis:{available:false,reason:'No saved segmentation run.',run:null},
+        review:null,review_history:[],review_requires_new_run:false,research_only:true,clinical_validation:false});
+    }
     if (path === "/auth/login")
       return json({ access_token: "browser-test-token", user });
     if (path === "/auth/register") return json(user, 201);
@@ -126,6 +134,10 @@ export async function installApi(
             uploaded_at: "2026-10-16T10:00:00Z",
           })
         : json({ detail: "No volume" }, 404);
+    if (/^\/cases\/\d+\/segmentation-config$/.test(path) && method === "GET") return json({
+      architecture: 'smallunet3d', default_threshold: .70, threshold_adjustable: true,
+      status: 'configured_not_verified', experimental: true, clinical_validation: false,
+    });
     if (/^\/cases\/\d+\/segmentations$/.test(path) && method === "GET") return json([]);
     if (path === '/stenosis/analytics/summary' || /^\/cases\/\d+\/stenosis\/analytics$/.test(path)) return json(summaryFixture({patientAllowed:['Admin','Clinician'].includes(role),caseId:path.startsWith('/cases/')?Number(path.split('/')[2]):null}));
     if (path === '/stenosis/analytics/analyses') return json(indexFixture());

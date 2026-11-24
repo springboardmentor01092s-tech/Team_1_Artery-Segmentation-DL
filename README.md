@@ -20,11 +20,14 @@ a dataset does not automatically grant permission to redistribute it.
 | --- | --- |
 | Accounts | JWT authentication, Argon2 password hashing, four roles, administration and audit events. No built-in accounts or passwords. |
 | Patients/cases | Server-backed patient/case management, supported 2D image and 3D NIfTI intake, metadata and exports. DICOM intake is unsupported. |
-| Segmentation | Optional experimental SmallUNet3D (85,177 parameters), persisted provenance/history, protected CT/mask/probability downloads and NiiVue slice/3D visualization. Weights and volumes are not included in Git. |
+| Segmentation | Optional experimental SmallUNet3D (85,177 parameters) and explicit opt-in MONAI SegResNet runtime, persisted provenance/history, protected CT/mask/probability downloads and NiiVue slice/3D visualization. SegResNet completed 40,000 optimizer updates on 200 Training cases and validation on 50 Val cases (macro Dice 0.755683). Val was used for checkpoint selection; this is not independent test or clinical validation. Weights and volumes are not included in Git; new runtime changes require a separate release. |
 | Vessel analysis | Standalone binary-mask component filtering, centerline extraction and spacing-aware diameter utilities. These do not activate quantitative stenosis in the app. |
 | Stenosis infrastructure | Capability contracts, job/result/lesion/explanation storage, operational analytics and research reports. Genuine stenosis provider/worker integration remains unavailable; execution permissions stay disabled. |
-| Offline evaluation | Protected artifact upload/import, macro case metrics, case-wise results, exact-case-set comparison and model history APIs. No seeded scores. A completed evaluation dashboard is not implied by these APIs. |
-| Future work | Validated narrowing/severity, genuine attribution generation, advanced segmentation architecture, reproducible model comparison and full validation. |
+| Offline evaluation | Protected artifact upload/import, authenticated evaluation dashboard, macro case metrics, case-wise results, exact-case-set comparison, model run history and research JSON/CSV/browser-PDF exports. Local completion evidence records a full 50-case comparison for both models; the saved comparison used different preprocessing/training recipes and is not an architecture-only ablation. No seeded scores. Latest local UI/statistics changes are not yet deployed. |
+| Reader preparation | Source-bound private worksheets plus a separate CT-only R1/R2 workflow: seven native-IJK landmark fields, revisioned formal drafts, immutable submissions and separately credential-gated third-reader adjudication. A separate append-only unverified amendment workflow is implemented; R3 assignment is refused when amendments exist because the current adjudication contract does not bind them. All outputs remain unverified, with clinical/training release false. Local software is not yet deployed; no real credential is seeded. See [independent lesion review](docs/independent-lesion-review.md) and [private overlay-exposed drafts](docs/annotation-drafts.md). |
+| Future work | Qualified human reviewers and lesion labels, approved credential registration, stenosis detector/classifier training, validated narrowing/severity, genuine attribution generation, independent reproduction of the saved matched comparison and current-release verification. Assignment withdrawal/reassignment and amendment-aware adjudication remain incomplete. |
+
+See [the current architecture and capability boundaries](docs/project-architecture.md).
 
 An experimental mask is not a stenosis finding. Probabilities are not calibrated clinical
 confidence. Historical checkpoint step/run provenance is unresolved: a step-700 filename
@@ -269,7 +272,7 @@ From `backend/`, with development requirements installed:
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m pytest -q tests/test_database_error_logging.py tests/test_stenosis_reporting.py
-.\.venv\Scripts\python.exe scripts/test_postgres.py --bin "C:\Program Files\PostgreSQL\18\bin"
+.\.venv\Scripts\python.exe scripts/test_postgres.py --bin "<POSTGRESQL_BIN>"
 .\.venv\Scripts\python.exe -m pip check
 ```
 
@@ -299,6 +302,23 @@ accessibility. They do not establish live production/database behavior. To reuse
 existing Chromium browser, set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH. The real disposable
 Axios/auth HTTP contract helper requires frontend dependencies first, then
 `python scripts/test_frontend_contract.py` from `backend/`.
+
+The browser runner starts its own loopback Vite server and refuses to reuse an
+existing server by default. Set `PLAYWRIGHT_BASE_URL` to a loopback HTTP origin
+(for example `http://127.0.0.1:5195`) to select an unused port. Set
+`PLAYWRIGHT_ARTIFACT_DIR` to an external directory for browser results and the
+Vite cache. Screenshots use per-test output paths. Test startup does not read
+private `.env` files or proxy to the development API. Explicit isolated live
+integration requires `PLAYWRIGHT_LIVE_API_URL` (a loopback HTTP origin) in addition
+to its disposable fixture configuration. Do not point it at application databases
+or patient data. `PLAYWRIGHT_REUSE_SERVER=1` is an explicit reuse opt-in.
+
+Session restoration keeps credentials after temporary verification failures but
+does not load protected content or trust cached roles. Retry verification or sign
+out locally from the recovery screen. Invalid/expired tokens still clear on 401.
+Imported segmentation evaluations are available at `/evaluation`; comparison at
+`/models/compare` requires exact case membership. These read-only screens neither
+import data nor start training/inference. See [the evaluation contract](docs/evaluation-api.md).
 
 Read-only migration inspections are `python -m alembic current`, `heads` and `history`.
 `python -m alembic check` compares an already migrated database against model metadata;

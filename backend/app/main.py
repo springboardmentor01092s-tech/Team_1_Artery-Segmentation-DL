@@ -2,7 +2,7 @@
 import logging
 import sqlite3
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -10,17 +10,26 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
 from app.core.evaluation_upload import EvaluationUploadBodyLimit
+from app.core.annotation_body import AnnotationBodyLimit
+from app.core.offline_research_body import OfflineResearchBodyLimit
+from app.core.review_access import enforce_review_access
 from app.routers.auth import router as auth_router
 from app.routers.patients import router as patients_router
 from app.routers.cases import router as cases_router
 from app.routers.admin import router as admin_router
 from app.routers.segmentation import router as segmentation_router
+from app.routers.case_workflow import router as case_workflow_router
+from app.routers.annotation_drafts import router as annotation_drafts_router
+from app.routers.review_assignments import router as review_assignments_router
+from app.routers.review_adjudications import router as review_adjudications_router
+from app.routers.offline_research import router as offline_research_router
 from app.routers.stenosis import router as stenosis_router
 from app.routers.stenosis_jobs import router as stenosis_jobs_router
 from app.routers.stenosis_results import router as stenosis_results_router
 from app.routers.stenosis_explanations import router as stenosis_explanations_router
 from app.routers.stenosis_reporting import router as stenosis_reporting_router
 from app.routers.evaluations import router as evaluations_router
+from app.routers.reference_profiles import router as reference_profiles_router
 from app.database.session import check_database_connection
 
 
@@ -33,11 +42,14 @@ app = FastAPI(
         "Backend API for our medical image analysis research prototype."
     ),
     version="0.1.0",
+    dependencies=[Depends(enforce_review_access)],
 )
 
 app.add_middleware(EvaluationUploadBodyLimit, path=f"{settings.API_V1_STR}/evaluations/artifacts")
+app.add_middleware(AnnotationBodyLimit, prefix=settings.API_V1_STR)
+app.add_middleware(OfflineResearchBodyLimit, prefix=settings.API_V1_STR)
 app.add_middleware(CORSMiddleware, allow_origins=settings.CORS_ORIGINS,
-                   allow_credentials=False, allow_methods=["GET", "POST", "PATCH"],
+                   allow_credentials=False, allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type", "Idempotency-Key"])
 
 
@@ -80,12 +92,18 @@ async def unexpected_error(request: Request, exc: Exception):
 
 app.include_router(admin_router, prefix=settings.API_V1_STR)
 app.include_router(segmentation_router, prefix=settings.API_V1_STR)
+app.include_router(case_workflow_router, prefix=settings.API_V1_STR)
+app.include_router(annotation_drafts_router, prefix=settings.API_V1_STR)
+app.include_router(review_assignments_router, prefix=settings.API_V1_STR)
+app.include_router(review_adjudications_router, prefix=settings.API_V1_STR)
+app.include_router(offline_research_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_jobs_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_results_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_explanations_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_reporting_router, prefix=settings.API_V1_STR)
 app.include_router(evaluations_router, prefix=settings.API_V1_STR)
+app.include_router(reference_profiles_router, prefix=settings.API_V1_STR)
 
 app.include_router(
     patients_router,

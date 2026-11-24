@@ -36,7 +36,7 @@ existing `app` package resolves normally; no `sys.path` or production-code hacks
 are needed.
 
 ```powershell
-Set-Location F:\Documents\artery_demo\backend
+Set-Location <REPOSITORY_ROOT>\backend
 ..\.venv\Scripts\python.exe -B -m training.train --help
 
 # READ-ONLY preflight command. Not run on the recovered cohort in this task.
@@ -119,9 +119,9 @@ silently falling back. Performance costs have not been benchmarked.
 ## Dataset, geometry and bounded cache
 
 The local root is
-`F:/Documents/vascuai-artifacts/datasets/imagecas-split4-extracted-20261101`.
+`<PRIVATE_ARTIFACT_PATH>`.
 Its manifest is
-`F:/Documents/vascuai-artifacts/diagnostics/imagecas-split4-extraction-manifest-20261101/imagecas-v2-latest-split4-manifest.csv`.
+`<PRIVATE_ARTIFACT_PATH>`.
 
 Read BOM-safe CSV fields `case_id,split,archive_group,ct_member,mask_member`.
 Training/Val pairs must match exact case/member names and approved directory

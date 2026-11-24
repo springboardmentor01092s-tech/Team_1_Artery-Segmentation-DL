@@ -8,7 +8,7 @@ Implemented on `baseline-model-diagnostics`, starting at
 `461a7d1d3ee5047aa4dd5d37465f5c146e57230b`. The four pre-existing README,
 AppShell, Landing and static-dashboard metric-honesty edits were preserved and
 copied with a binary patch/status/starting SHA to
-`F:\Documents\artery_demo_codex_safety\web-sprint-20261019` before broad changes.
+`<REPOSITORY_ROOT>_codex_safety\web-sprint-20261019` before broad changes.
 No branch switching, staging, commit, push, merge, destructive reset, retraining
 or existing application-database migration was performed.
 
@@ -171,7 +171,7 @@ garbage collection it fell to approximately **16.2 MiB** (initial approximately
 measurements or a cross-device performance guarantee. Shader caches/library code
 remain loaded after close. PNGs, resource JSON and final handoff checksum checks
 are preserved outside Git under
-`F:\Documents\vascuai-artifacts\viewer-verification-20261019`.
+`<PRIVATE_ARTIFACT_PATH>`.
 
 The actual model remains a poor experimental baseline. Rendering a nonempty or
 visually plausible volume does not establish segmentation accuracy, clinical
@@ -185,7 +185,7 @@ or new training run was used.
 npm test
 npm run build
 npm run lint
-$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = 'C:\Users\vimzz\AppData\Local\ms-playwright\chromium-1223\chrome-win64\chrome.exe'
+$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = '<LOCAL_TOOL_PATH>'
 npm run test:e2e
 
 # Optional real-volume smoke: explicitly supply de-identified validation artifacts.
@@ -196,7 +196,7 @@ npx playwright test tests/e2e/viewer-real-volume.spec.js --workers=1
 
 # backend/, using the existing Python environment
 python -m pytest -q --cov=app --cov-report=term-missing
-python scripts/test_postgres.py --bin 'C:\Program Files\PostgreSQL\18\bin'
+python scripts/test_postgres.py --bin '<POSTGRESQL_BIN>'
 python scripts/test_frontend_contract.py
 ```
 

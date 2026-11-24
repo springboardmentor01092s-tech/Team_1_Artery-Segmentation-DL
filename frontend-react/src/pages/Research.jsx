@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Database,
   FlaskConical,
   Cpu,
-  ChartNoAxesCombined,
   CircleDashed,
   CheckCircle,
   ArrowRight,
@@ -55,7 +53,7 @@ const content = {
     description:
       "Model artifacts, intended use, versions, and deployment provenance.",
     headline: "No model registry service is connected.",
-    body: "This deployment does not expose registered models or serving status. Model versions, deployment changes, and rollback controls become available only through an authorized model lifecycle API.",
+    body: "Imported evaluation model identities and run references are available in the evaluation workspace. A serving registry, deployment changes and rollback controls are not connected.",
     empty: "No registered model artifacts",
     emptyBody:
       "A model name alone does not indicate a loaded or validated model.",
@@ -88,7 +86,7 @@ const content = {
     description:
       "Training history, configurations, checkpoints, and research provenance.",
     headline: "A training job runner is not connected.",
-    body: "Experiment creation and live training controls require a real job runner. This workspace does not start training or simulate progress, loss curves, or checkpoint histories.",
+    body: "Experiment creation and live training controls require a real job runner. This workspace does not start training or simulate progress or loss curves. Imported historical run references can be inspected in the evaluation workspace.",
     empty: "No training runs available",
     emptyBody:
       "Connect persistent training jobs to track real progress and configuration history.",
@@ -169,8 +167,8 @@ export default function Research({ section = "models" }) {
             </table>
           </div>
           <EmptyState icon={Icon} title={c.empty} description={c.emptyBody} />
-          <Link className="text-link" to="/cases">
-            Explore available study records
+          <Link className="text-link" to={section === 'datasets' ? '/cases' : '/evaluation'}>
+            {section === 'datasets' ? 'Explore available study records' : 'Inspect imported evaluation evidence'}
             <ArrowRight size={13} />
           </Link>
         </Panel>
@@ -214,138 +212,4 @@ export default function Research({ section = "models" }) {
     </AppShell>
   );
 }
-const metrics = {
-  Segmentation: [
-    "Dice coefficient",
-    "Intersection over Union",
-    "Precision",
-    "Recall / sensitivity",
-    "Hausdorff distance",
-    "Average surface distance",
-  ],
-  Stenosis: [
-    "Precision",
-    "Recall",
-    "F1 score",
-    "ROC-AUC",
-    "False-positive rate",
-    "False-negative rate",
-  ],
-  Classification: [
-    "Accuracy",
-    "Macro F1",
-    "Weighted F1",
-    "Per-class precision",
-    "Per-class recall",
-    "Confusion matrix",
-  ],
-};
-export function Evaluation({ initialTab = "Segmentation" }) {
-  const [tab, setTab] = useState(initialTab);
-  return (
-    <AppShell
-      breadcrumbs={[{ label: "Research" }, { label: "Model evaluation" }]}
-    >
-      <PageHeader
-        eyebrow="RESEARCH EVALUATION"
-        title="Evidence makes the difference."
-        description="Separate model tasks. Preserve the context behind every metric."
-      />
-      <section className="availability-hero">
-        <ChartNoAxesCombined size={34} strokeWidth={1.3} />
-        <div>
-          <h2>No evaluation runs available.</h2>
-          <p>
-            Evaluation requires a model artifact, a versioned dataset,
-            ground-truth annotations, and a recorded protocol. No performance
-            scores are fabricated or inferred from case counts.
-          </p>
-        </div>
-      </section>
-      <div className="segmented" style={{ marginBottom: 22 }}>
-        {Object.keys(metrics).map((t) => (
-          <button
-            key={t}
-            className={tab === t ? "selected" : ""}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-      <div className="feature-grid" style={{ marginBottom: 24 }}>
-        {metrics[tab].map((metric) => (
-          <div className="metric-placeholder" key={metric}>
-            <h3>{metric}</h3>
-            <strong>—</strong>
-            <p>No evaluation result</p>
-          </div>
-        ))}
-      </div>
-      <div className="equal-columns">
-        <Panel title="Evaluation context">
-          <dl className="metadata-list">
-            {[
-              "Model artifact & version",
-              "Dataset & split version",
-              "Ground-truth annotation source",
-              "Evaluation date & sample size",
-              "Metric calculation protocol",
-            ].map((label) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>Not available</dd>
-              </div>
-            ))}
-          </dl>
-        </Panel>
-        <Panel title="Comparable by design">
-          <p className="text-sm text-muted" style={{ lineHeight: 1.9 }}>
-            Compare models on the same input, held-out split, preprocessing, and
-            annotation reference. Keep training, validation, and test results
-            distinct.
-          </p>
-          <Link className="btn btn-ghost" to="/models/compare">
-            Model comparison
-            <ArrowRight size={13} />
-          </Link>
-        </Panel>
-      </div>
-    </AppShell>
-  );
-}
-export function ModelComparison() {
-  return (
-    <AppShell
-      breadcrumbs={[
-        { label: "Models", href: "/models" },
-        { label: "Comparison" },
-      ]}
-    >
-      <PageHeader
-        eyebrow="MODEL COMPARISON"
-        title="Put results side by side."
-        description="A shared protocol is the foundation of a meaningful comparison."
-      />
-      <div className="equal-columns">
-        {["Model A", "Model B"].map((label) => (
-          <Panel title={label} key={label}>
-            <EmptyState
-              icon={Cpu}
-              title="No evaluated model available"
-              description="A registered model, evaluation dataset, and protocol are required before comparison."
-            />
-          </Panel>
-        ))}
-      </div>
-      <div className="notice" style={{ marginTop: 24 }}>
-        There are no model artifacts or evaluation runs in the connected API.
-        Comparisons, scores, and rankings are unavailable.
-      </div>
-      <Link className="btn btn-primary" to="/models">
-        Back to model registry
-        <ArrowRight size={14} />
-      </Link>
-    </AppShell>
-  );
-}
+export { default as Evaluation, ModelComparison } from "./Evaluations";

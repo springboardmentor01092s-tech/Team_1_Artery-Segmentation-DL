@@ -31,10 +31,19 @@ test('all four canonical roles survive identity mapping', async () => {
   for (const role of ['Clinician', 'Researcher', 'DataScientist', 'Admin']) {
     const api = createAuthApi({ get: async (path) => {
       assert.equal(path, '/auth/me');
-      return { data: { full_name: 'User', role } };
+      return { data: { id: 1, is_active: true, full_name: 'User', role } };
     } });
-    assert.deepEqual(await api.me(), { full_name: 'User', name: 'User', role });
+    assert.deepEqual(await api.me(), { id: 1, is_active: true, full_name: 'User', name: 'User', role });
   }
+});
+
+test('restoration forwards cancellation and timeout and rejects malformed identity', async () => {
+  const signal = new AbortController().signal;
+  const api = createAuthApi({ get: async (path, options) => {
+    assert.equal(path, '/auth/me'); assert.equal(options.signal, signal); assert.equal(options.timeout, 15000);
+    return { data: { id: 1, full_name: 'Synthetic', role: 'Unknown', is_active: true } };
+  } });
+  await assert.rejects(api.me({ signal, timeout: 15000 }), /invalid session identity/);
 });
 
 test('profile update excludes privilege and email changes', async () => {

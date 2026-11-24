@@ -1,0 +1,21 @@
+# Explicit optional CPU segmentation recipe. Do not stack compose.model.yaml.
+# A trusted checkpoint stays external and read-only; no worker/stenosis provider.
+services:
+  api:
+    build:
+      args:
+        INSTALL_MODEL: "true"
+        INSTALL_SEGRESNET: "true"
+    environment:
+      VASCULAI_MODEL_ARCHITECTURE: segresnet-1mm-v1
+      VASCULAI_MODEL_CHECKPOINT: /models/best.pt
+      VASCULAI_MODEL_CHECKPOINT_SHA256: ${SEGRESNET_CHECKPOINT_SHA256:?Set the verified checkpoint SHA-256}
+      VASCULAI_MODEL_THRESHOLD: "0.5"
+      VASCULAI_MODEL_DEVICE: cpu
+      VASCULAI_MODEL_BATCH_SIZE: "1"
+      VASCULAI_MODEL_THREADS: "4"
+    volumes:
+      - type: bind
+        source: ${SEGRESNET_ARTIFACT_DIR:?Set the directory containing the trusted best.pt}
+        target: /models
+        read_only: true

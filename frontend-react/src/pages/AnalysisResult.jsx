@@ -15,6 +15,7 @@ import { saveArtifact, segmentationEligibility, segmentationError } from "../lib
 import { formatDate } from "../lib/format";
 
 const SegmentationViewer = lazy(() => import('../components/SegmentationViewer'));
+const OfflineResearchPanel = lazy(() => import('../components/OfflineResearchPanel'));
 
 export default function AnalysisResult() {
   const { id, analysisId } = useParams();
@@ -33,12 +34,15 @@ function SegmentationWorkspace({ item, requestedId, refreshCase }) {
   const { isRole } = useAuth();
   const canRun = isRole(...CLINICAL_WRITERS);
   const history = useRemote(useCallback(() => segmentationApi.list(item.id), [item.id]));
+  const config = useRemote(useCallback(() => segmentationApi.config(item.id), [item.id]));
   const volume = useRemote(useCallback(() => item.hasVolume ? casesApi.getVolumeMetadata(item.id) : Promise.resolve(null), [item.id, item.hasVolume]));
-  const [threshold, setThreshold] = useState("0.70");
+  const [thresholdOverride, setThreshold] = useState(null);
+  const threshold = thresholdOverride ?? (config.data ? String(config.data.default_threshold) : "");
   const [thresholdError, setThresholdError] = useState("");
   const [run, setRun] = useState({ active: false, success: false, error: "" });
   const [download, setDownload] = useState({ key: "", error: "", success: "" });
   const [selectedRun, setSelectedRun] = useState(null);
+  const [offlineRun,setOfflineRun]=useState(null);
   const viewerOpener = useRef(null);
   const submitting = useRef(false);
   const downloading = useRef(false);
@@ -47,11 +51,12 @@ function SegmentationWorkspace({ item, requestedId, refreshCase }) {
   const inputReason = volume.loading && item.hasVolume ? "Checking volume dimensions…" : volume.error ? "The input check failed. Retry loading volume metadata before running." : segmentationEligibility(item, volume.data);
   const inaccessible = history.error?.response?.status === 403;
   const selected = history.data?.find(result => result.id === selectedRun && !result.stale);
+  const offlineSelected=history.data?.find(result=>result.id===offlineRun&&!result.stale);
   function closeViewer() { setSelectedRun(null); viewerOpener.current?.focus(); }
 
   async function runSegmentation(event) {
     event.preventDefault();
-    if (submitting.current || !canRun || inputReason || inaccessible) return;
+    if (submitting.current || !canRun || inputReason || inaccessible || !config.data || config.loading || config.error) return;
     let selected;
     try { selected = parseThreshold(threshold); }
     catch (error) { setThresholdError(error.message); return; }
@@ -91,7 +96,10 @@ function SegmentationWorkspace({ item, requestedId, refreshCase }) {
     <div className="stack segmentation-workspace">
       <div className="notice"><Layers size={18} aria-hidden="true" /><span>Experimental research outputs; not clinically validated. Stenosis detection, severity estimation, calibrated confidence and clinical findings are not implemented.</span></div>
       <div className="two-column">
-        <Panel title="Run segmentation" description="SmallUNet3D · three-dimensional CT only">
+        <Panel title="Run segmentation" description="Explicitly configured artery model · three-dimensional CT only">
+          {config.loading ? <Loading label="Checking model configuration…" /> : config.error ? <ErrorState error={config.error} retry={config.reload} /> : <p>
+            Model recipe: {config.data.architecture}. {config.data.status === 'not_configured' ? 'No checkpoint is configured; execution is unavailable.' : 'Checkpoint configured; identity and runtime are verified when a run starts.'}
+          </p>}
           {volume.loading && item.hasVolume ? <Loading label="Checking volume dimensions…" /> : volume.error ? <ErrorState error={volume.error} retry={volume.reload} /> :
             <p className="text-sm text-muted">{inputReason || "A 3D CT NIfTI volume is recorded. Model and input availability are checked when a run starts."}</p>}
           <div className="segmentation-input-links">
@@ -102,11 +110,11 @@ function SegmentationWorkspace({ item, requestedId, refreshCase }) {
           {canRun ? <form onSubmit={runSegmentation} noValidate>
             <div className="form-group">
               <label className="form-label" htmlFor="segmentation-threshold">Segmentation threshold</label>
-              <input id="segmentation-threshold" className="form-input" type="number" min="0" max="1" step="any" required value={threshold} disabled={run.active} aria-invalid={Boolean(thresholdError)} aria-describedby={`threshold-help${thresholdError ? " threshold-error" : ""}`} onChange={(event) => { setThreshold(event.target.value); setThresholdError(""); }} />
-              <p id="threshold-help" className="text-xs text-muted">Range 0–1; default 0.70. Foreground is probability ≥ threshold. This is not clinical confidence.</p>
+              <input id="segmentation-threshold" className="form-input" type="number" min="0" max="1" step="any" required value={threshold} disabled={run.active || !config.data || !config.data.threshold_adjustable} aria-invalid={Boolean(thresholdError)} aria-describedby={`threshold-help${thresholdError ? " threshold-error" : ""}`} onChange={(event) => { setThreshold(event.target.value); setThresholdError(""); }} />
+              <p id="threshold-help" className="text-xs text-muted">Foreground is probability ≥ threshold. The server supplies the recipe default; SegResNet fixes it at 0.5. This is not clinical confidence.</p>
               {thresholdError && <p id="threshold-error" className="notice error" role="alert">{thresholdError}</p>}
             </div>
-            <button className="btn btn-primary" type="submit" disabled={run.active || Boolean(inputReason) || inaccessible}>
+            <button className="btn btn-primary" type="submit" disabled={run.active || Boolean(inputReason) || inaccessible || config.loading || Boolean(config.error) || config.data?.status !== 'configured_not_verified'}>
               {run.active ? <LoaderCircle className="spin" size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}
               {run.active ? "Segmentation running…" : "Run segmentation"}
             </button>
@@ -130,16 +138,17 @@ function SegmentationWorkspace({ item, requestedId, refreshCase }) {
           <EmptyState icon={Layers} title="No segmentation runs recorded" description="This case has no saved segmentation results. Upload a compatible 3D CT volume and have a Clinician or Admin start a run." /> : <>
             {requestedId && !history.data.some((result) => result.id === requestedId) && <p className="notice">The requested run is not in this case’s segmentation history. Available runs are listed below.</p>}
             <div className="stack">
-              {history.data.map((result) => <SegmentationRecord key={result.id} result={result} highlighted={result.id === requestedId} download={download} onDownload={downloadResult} onView={event => { viewerOpener.current = event.currentTarget; setSelectedRun(result.id); }} />)}
+              {history.data.map((result) => <SegmentationRecord key={result.id} result={result} highlighted={result.id === requestedId} download={download} onDownload={downloadResult} onView={event => { viewerOpener.current = event.currentTarget;setOfflineRun(null); setSelectedRun(result.id); }} onOffline={()=>{setSelectedRun(null);setOfflineRun(result.id);}} />)}
             </div>
           </>}
       </Panel>
       {selectedRun && !history.loading && (selected ? <Suspense fallback={<Loading label="Loading medical viewer…" />}><SegmentationViewer key={selected.id} caseId={item.id} result={selected} onClose={closeViewer} /></Suspense> : <p className="notice" role="alert">The selected result is stale or unavailable. The viewer is closed. <button className="btn btn-ghost btn-sm" onClick={closeViewer}>Dismiss</button></p>)}
+      {offlineRun&&!history.loading&&(offlineSelected?<Suspense fallback={<Loading label="Loading offline research…"/>}><OfflineResearchPanel key={`${offlineSelected.id}:${offlineSelected.metadata.source_sha256}`} result={offlineSelected} onClose={()=>setOfflineRun(null)}/></Suspense>:<p role="alert">Offline research source is stale or unavailable.</p>)}
     </div>
   );
 }
 
-function SegmentationRecord({ result, highlighted, download, onDownload, onView }) {
+function SegmentationRecord({ result, highlighted, download, onDownload, onView,onOffline }) {
   const metadata = result.metadata || {};
   return (
     <article className={`segmentation-record${highlighted ? " segmentation-record-selected" : ""}`} aria-label={`Segmentation ${result.id}`}>
@@ -151,11 +160,15 @@ function SegmentationRecord({ result, highlighted, download, onDownload, onView 
         ["Run ID", result.id], ["Threshold", metadata.threshold], ["Model", metadata.architecture],
         ["Checkpoint step", metadata.checkpoint_step], ["Volume dimensions", Array.isArray(metadata.shape) ? metadata.shape.join(" × ") : null],
         ["Patch / stride", Array.isArray(metadata.patch_size) && metadata.stride != null ? `${metadata.patch_size.join(" × ")} / ${metadata.stride}` : null],
+        ["Explicit recipe", metadata.recipe], ["Verified optimizer updates", metadata.optimizer_steps],
+        ["Sliding window overlap", metadata.overlap], ["Window blending", metadata.blending],
+        ["Compute precision", metadata.compute_precision],
         ["Runtime", metadata.duration_seconds != null ? `${metadata.duration_seconds} seconds` : null],
         ["Input SHA-256", metadata.source_sha256], ["Checkpoint SHA-256", metadata.checkpoint_sha256],
       ]} />
       {result.stale && <p className="notice">Downloads unavailable: the source input has changed or cannot be verified. Refresh the case inputs and run a new segmentation when eligible.</p>}
       <div className="segmentation-downloads">
+        <button className="btn btn-ghost btn-sm" disabled={result.stale} onClick={onOffline} aria-label={`View offline research for run ${result.id}`}>View offline research evidence</button>
         <button className="btn btn-primary btn-sm" disabled={result.stale} onClick={onView} aria-label={`View CT + Segmentation for run ${result.id}`}>View CT + Segmentation</button>
         {["mask", "probabilities"].map((artifact) => <button key={artifact} className="btn btn-ghost btn-sm" disabled={result.stale || Boolean(download.key)} onClick={() => onDownload(result, artifact)} aria-label={`Download ${artifact === "mask" ? "mask" : "probabilities"} for run ${result.id}`}>
           {download.key === `${result.id}-${artifact}` ? <LoaderCircle size={14} className="spin" aria-hidden="true" /> : <Download size={14} aria-hidden="true" />}

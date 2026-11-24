@@ -31,7 +31,7 @@ pytest 9.1.1. No dependency manifests are changed by this tool.
 The current authoritative source is:
 
 ```text
-F:\Documents\vascuai-artifacts\diagnostics\case-852-source-recovery-20261020\imageCAS_data_split.kaggle.xlsx
+<PRIVATE_ARTIFACT_PATH>
 ```
 
 Select `v2-latest`, header row 2 (equivalent to pandas `header=1`), case column
@@ -39,7 +39,7 @@ Select `v2-latest`, header row 2 (equivalent to pandas `header=1`), case column
 `imagecas-v2-latest-split4.csv` in that same directory. The pair manifest is:
 
 ```text
-F:\Documents\vascuai-artifacts\diagnostics\imagecas-data-recovery-20261020T181151Z\recovered-pair-manifest.csv
+<PRIVATE_ARTIFACT_PATH>
 ```
 
 These are documented local inputs, not hardcoded production paths. No ImageCAS
@@ -60,12 +60,12 @@ does not hash volume contents, scan labels or create a report:
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m tools.imagecas_readiness.validator `
-  --split-manifest 'F:\Documents\vascuai-artifacts\diagnostics\case-852-source-recovery-20261020\imageCAS_data_split.kaggle.xlsx' `
+  --split-manifest '<PRIVATE_ARTIFACT_PATH>' `
   --sheet v2-latest --header-row 2 --split-column Split-4 `
-  --compare-split 'F:\Documents\vascuai-artifacts\diagnostics\case-852-source-recovery-20261020\imagecas-v2-latest-split4.csv' `
-  --pair-manifest 'F:\Documents\vascuai-artifacts\diagnostics\imagecas-data-recovery-20261020T181151Z\recovered-pair-manifest.csv' `
-  --source-root 'F:\Documents\artery_demo\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered\sample' `
-  --source-root 'F:\Documents\vascuai-artifacts\diagnostics\case-852-source-recovery-20261020\source' `
+  --compare-split '<PRIVATE_ARTIFACT_PATH>' `
+  --pair-manifest '<PRIVATE_ARTIFACT_PATH>' `
+  --source-root '<REPOSITORY_ROOT>\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered\sample' `
+  --source-root '<PRIVATE_ARTIFACT_PATH>' `
   --expected-counts 'Training=700,Val=50,Testing=250'
 ```
 

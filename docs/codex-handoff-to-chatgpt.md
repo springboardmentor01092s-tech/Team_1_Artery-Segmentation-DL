@@ -2,7 +2,7 @@
 
 ## Repository and preservation
 
-Repository: `F:\Documents\artery_demo`.
+Repository: `<REPOSITORY_ROOT>`.
 
 Starting and final branch: **baseline-model-diagnostics**.
 Starting and final HEAD: **461a7d1d3ee5047aa4dd5d37465f5c146e57230b**.
@@ -14,7 +14,7 @@ frontend-react/src/components/AppShell.jsx,
 frontend-react/src/pages/Landing.jsx and frontend/dashboard.html. Their existing
 metric-honesty/research-only warnings were preserved. Before implementation,
 copies, the binary Git diff, initial status and starting SHA were saved outside
-the repository at `F:\Documents\artery_demo_codex_safety\web-sprint-20261019`.
+the repository at `<REPOSITORY_ROOT>_codex_safety\web-sprint-20261019`.
 AppShell, Landing and the static dashboard retain those pre-existing edits;
 README additionally documents the new viewer.
 
@@ -109,7 +109,7 @@ symlink needed for one test; its Linux equivalent passed in the container smoke.
 | `npx playwright test --reporter=line` with supplied validation artifact paths | **53 passed**, 0 failed, 0 skipped |
 | Normal browser suite without real artifact variables, prior final run | **52 passed**, real-volume test intentionally skipped |
 | `python -m pytest -q --cov=app --cov-report=term-missing` in backend, original checkpoint enabled | **297 passed, 1 skipped**, 3 existing deprecation warnings; total coverage 93% |
-| `python scripts/test_postgres.py --bin 'C:\Program Files\PostgreSQL\18\bin'` | **297 passed, 1 skipped**, 3 warnings; isolated temporary cluster, coverage 92% |
+| `python scripts/test_postgres.py --bin '<POSTGRESQL_BIN>'` | **297 passed, 1 skipped**, 3 warnings; isolated temporary cluster, coverage 92% |
 | `python scripts/test_frontend_contract.py` | **3 passed**, real Axios/Uvicorn with disposable SQLite |
 | `python -m pip check` | No broken requirements |
 | `npm audit --omit=dev --audit-level=moderate` | Zero vulnerabilities |
@@ -120,7 +120,7 @@ symlink needed for one test; its Linux equivalent passed in the container smoke.
 | Disposable Linux API/nginx container smoke | Passed: nginx syntax, health/readiness, SPA refresh, asset caching/404, API 401/404 forwarding, bearer forwarding, OpenAPI security/MIME types, real symlink escape rejected with 409 |
 
 Browser tests use the existing Chromium executable:
-`C:\Users\vimzz\AppData\Local\ms-playwright\chromium-1223\chrome-win64\chrome.exe`.
+`<LOCAL_TOOL_PATH>`.
 No browser installation was needed. Synthetic fixtures cover accessibility at
 desktop/mobile widths, keyboard navigation, failed authorization, stale history,
 wrong source hash/geometry, cancellation, session changes, unsupported graphics,
@@ -166,7 +166,7 @@ passed, but are not a substitute for that deployment acceptance run.
 
 ## Exact file inventory
 
-Paths below are relative to `F:\Documents\artery_demo`. **No files deleted.**
+Paths below are relative to `<REPOSITORY_ROOT>`. **No files deleted.**
 
 Modified backend source/tests:
 
@@ -226,12 +226,12 @@ final Git diff was reviewed, including all new untracked source files.
 ## Evidence locations outside Git
 
 - Safety snapshot, command logs and disposable container-smoke script/results:
-  `F:\Documents\artery_demo_codex_safety\web-sprint-20261019`.
+  `<REPOSITORY_ROOT>_codex_safety\web-sprint-20261019`.
 - Synthetic viewer screenshots, real validation viewer PNGs, sampled resource
   JSON and final original-artifact integrity JSON:
-  `F:\Documents\vascuai-artifacts\viewer-verification-20261019`.
+  `<PRIVATE_ARTIFACT_PATH>`.
 - Existing baseline diagnosis (not replaced by this sprint):
-  `F:\Documents\vascuai-artifacts\diagnostics\baseline-step700-20261017\diagnosis-report.md`.
+  `<PRIVATE_ARTIFACT_PATH>`.
 
 No credentials, access tokens, private environment contents or medical image
 payloads are included in this report.

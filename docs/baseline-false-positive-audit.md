@@ -16,10 +16,10 @@ The branch is `research/baseline-false-positive-audit`, HEAD
 - `docs/baseline-false-positive-audit.md` (this report)
 
 Handoff:
-`F:\Documents\artery_demo\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered`
+`<REPOSITORY_ROOT>\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered`
 
 Saved run:
-`F:\Documents\vascuai-artifacts\runs\case-851-step700-threshold070-20261016`
+`<PRIVATE_ARTIFACT_PATH>`
 
 All eight handoff manifest checksums match. The checkpoint was **hashed only**,
 never deserialized or executed. Its SHA-256 is
@@ -182,15 +182,15 @@ Proposed next work, requiring separate approval/data as applicable:
 
 ## Reproduction, environment and outputs
 
-From `F:\Documents\artery_demo`, use the existing backend virtual environment:
+From `<REPOSITORY_ROOT>`, use the existing backend virtual environment:
 
 ```powershell
 .\backend\.venv\Scripts\python.exe -m pytest research/tests/test_baseline_false_positive_audit.py -q
 
 .\backend\.venv\Scripts\python.exe research/baseline_false_positive_audit.py `
-  --handoff-dir 'F:\Documents\artery_demo\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered' `
-  --run-dir 'F:\Documents\vascuai-artifacts\runs\case-851-step700-threshold070-20261016' `
-  --output-dir 'F:\Documents\vascuai-artifacts\diagnostics\case-851-baseline-audit-20261020' `
+  --handoff-dir '<REPOSITORY_ROOT>\model\vascuai_model_handoff_for_codex_20261016\vascuai_model_handoff_recovered' `
+  --run-dir '<PRIVATE_ARTIFACT_PATH>' `
+  --output-dir '<PRIVATE_ARTIFACT_PATH>' `
   --allow-reference-unknown-units
 ```
 
@@ -218,7 +218,7 @@ separation and row/plane wrapping, histogram endpoints, provenance failures and
 output overwrite/repository-write prevention. No backend database fixtures ran.
 
 Reports are in:
-`F:\Documents\vascuai-artifacts\diagnostics\case-851-baseline-audit-20261020`
+`<PRIVATE_ARTIFACT_PATH>`
 
 - `audit.json`: geometry, measurements, distributions, environment and before/after
   input SHA-256 values; includes the exact executed diagnostic script's SHA-256.
