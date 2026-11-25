@@ -226,6 +226,11 @@ for(const state of ['completed','failed','queued','running','stale','integrity_e
   const report=await reportFixture({state});assert.equal(await validateReport(report,1,report.analysis.analysis_id),report);if(state!=='completed')assert.equal(report.result,null);
 });
 test('zero-finding completed report remains a genuine typed result',async()=>{const report=await reportFixture({count:0});await validateReport(report,1,report.analysis.analysis_id);assert.equal(report.result.result.lesions.length,0);});
+test('report API contract preserves the version 1.0 numeric patient identifier',async()=>{
+  const report=await reportFixture();
+  assert.equal(await validateReport(report,1,report.analysis.analysis_id),report);
+  assert.equal(report.case.patient_id,1);
+});
 test('cross-case and fabricated completed reports fail closed',async()=>{
   const report=await reportFixture();await assert.rejects(validateReport(report,2,report.analysis.analysis_id));report.result=null;await assert.rejects(validateReport(report,1,report.analysis.analysis_id));
 });
@@ -238,6 +243,13 @@ test('HTTP errors stay errors and Blob error bodies never download as CSV',async
   const api=createStenosisReportingApi({get:async()=>{throw failure;}});
   await assert.rejects(api.reportCsv(1,report.analysis.analysis_id),{code:'source_changed',message:'Source changed'});
   await assert.rejects(createStenosisReportingApi({get:async()=>({status:200,data:new Blob(['<html>'],{type:'text/html'})})}).reportCsv(1,report.analysis.analysis_id),/CSV findings/);
+});
+test('structured PDF export uses the report endpoint and validates PDF bytes',async()=>{
+  const calls=[],report=await reportFixture(),pdf=new Blob(['%PDF-1.4\nsynthetic PDF fixture'],{type:'application/pdf'});
+  const api=createStenosisReportingApi({get:async(...args)=>{calls.push(args);return{status:200,data:pdf,headers:{'content-type':'application/pdf'}};}});
+  assert.equal(await api.reportPdf(1,report.analysis.analysis_id),pdf);
+  assert.deepEqual(calls,[[`/cases/1/stenosis/analyses/${report.analysis.analysis_id}/report.pdf`,{signal:undefined,responseType:'blob'}]]);
+  await assert.rejects(createStenosisReportingApi({get:async()=>({status:200,data:new Blob(['<html>'],{type:'application/pdf'}),headers:{'content-type':'application/pdf'}})}).reportPdf(1,report.analysis.analysis_id),/PDF research report/);
 });
 test('versioned JSON export allowlists top-level report fields',async()=>{
   const report=await reportFixture();report.worker_token='must not export';const body=JSON.parse(await reportJsonBlob(report).text());assert.equal(body.schema_version,'1.0');assert.equal(body.worker_token,undefined);assert.equal(body.result.result.lesions.length,3);
@@ -318,6 +330,12 @@ test('JSON export preserves null measurements, reasons and the original report',
   assert.deepEqual(body,before);
   assert.deepEqual(report,before);
   assert.equal(body.result.result.lesions[0].measurements.percentage_narrowing.value,null);
+});
+
+test('stenosis report JSON preserves its version 1.0 numeric patient identifier',async()=>{
+  const report=await reportFixture();report.case.patient_id=42;
+  const body=JSON.parse(await reportJsonBlob(report).text());
+  assert.deepEqual(body.case,{case_id:1,case_reference:'SYNTHETIC-CASE',patient_id:42});
 });
 
 test('unavailable reports with no result remain exportable',async()=>{

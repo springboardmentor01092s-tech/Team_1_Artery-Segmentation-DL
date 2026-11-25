@@ -1,5 +1,21 @@
 # Test evidence
 
+## Synthetic geometry measurement increment — 25 November 2026
+
+- Benchmark command: `python scripts\benchmark_synthetic_geometry.py --output-dir F:\vascuai-artifacts\runs\m3-synthetic-geometry-measurement-20261125T093700Z` (exit 0); repeat at `T094000Z` matched byte-for-byte. SHA-256 for both result files: `BBC6BC6C4E1FDB74032B85BF1C574BDBDC800F1D09A2CE3FED7810C92274F331`. Main JSON: `F:\vascuai-artifacts\runs\m3-synthetic-geometry-measurement-20261125T093700Z\measurement-benchmark.json`; CLI logs: `geometry-benchmark-final-audit.log` and `geometry-benchmark-repeat.log` under the diagnostics folder.
+- Measurement sample: 180 profiles / 216 lesion truth records; estimator input excluded independent truth fields. Detection: precision 1.0000, recall 0.9583, multi-lesion recall 0.9375, normal false candidates 0/36.
+- Frozen CNN remains a separate preserved artifact (SHA-256 `a264d54a1fb4c370673ecaa7f8d3733982c0132b6e88e83dab1993cabb497937`); prior disjoint 500-phantom synthetic test reported macro-F1 0.2887. It is not merged with or treated as validation of this geometry measurement procedure.
+- Profile-level metric summaries (synthetic voxels unless stated): reference radius n=180 MAE 0.3098, RMSE 0.3265, bias -0.3098; minimum radius n=180 MAE 0.2278, RMSE 0.2853, bias -0.2245; narrowing n=180 MAE 2.2917 pp, RMSE 3.5759 pp, bias +0.9953 pp. Matched lesion localization n=207 MAE 0.3574, RMSE 0.4331 axial voxels, signed bias +0.0139 axial voxels; matched lesion narrowing MAE 1.8785 pp, RMSE 2.7432 pp, bias -0.1213 pp. Maximum absolute narrowing error 13.0818 pp.
+- Absolute-error p50 / p90 / maximum: reference radius 0.2996 / 0.4089 / 0.8253 synthetic voxels; minimum radius 0.1798 / 0.4888 / 0.7448 synthetic voxels; profile narrowing 1.4844 / 5.0143 / 13.0818 pp; matched localization 0.3551 / 0.6391 / 1.2844 axial voxels.
+- Provisional synthetic-only severity: thresholds [10, 30, 50, 70]%; matched candidate accuracy 0.9855, macro-F1 0.9872. Full profile accuracy 0.9833, macro-F1 0.9833. These are deterministic categories derived from the same synthetic measurement procedure, not clinical label performance.
+- Backend M3-focused regression: **18 passed, 2 skipped**, exit 0. The skips are PyTorch-dependent model/Grad-CAM tests because this Python runtime has no Torch. Full backend rerun: **997 passed, 198 skipped, 2 warnings**, exit 0, 186.57 seconds. Skips include PostgreSQL-only concurrency tests unavailable in this run and optional Torch/runtime tests; they are not passes. Temporary pinned test dependencies were installed outside the repo; no requirement file changed.
+- Frontend `npm test`: **662 passed, 0 failed**. Lint: exit 0 with three warnings (experimental page state/ref-effect warnings and existing AuthContext Fast Refresh warning). Production build: exit 0 with the existing large imaging-bundle warning. Logs: `F:\vascuai-artifacts\diagnostics\m3-measurement-validation-20261125\frontend-unit-audit.log`, `frontend-lint-audit.log`, `frontend-build-audit.log`.
+- Experimental research browser spec: **4 passed**. Full browser suite after the response-contract correction: **221 passed, 4 skipped, 0 failed**. Skips: two PostgreSQL-backed stenosis acceptance tests require the disposable acceptance harness; the experimental live-API test requires explicit disposable API credentials; and the real-volume viewer test requires explicit de-identified CT/mask/metadata paths. The earlier narrow-viewport label timeout was not reproduced in the focused evaluation spec (12/12) or the full suite. An intermediate test-harness missing-import failure was fixed, then the export assertion and full suite passed. Logs are under `F:\vascuai-artifacts\diagnostics\m3-measurement-validation-20261125\`.
+- Final audit boundary: the benchmark was run twice with byte-identical output (SHA-256 above). Clinical/training authorization remain false. This audit did not use patient data, staging, a database, or deployed services; PostgreSQL-specific behavior and PyTorch/Grad-CAM runtime behavior remain unverified by this run.
+- Clinical and training authorization flags remain false. No clinical or patient-data test was performed.
+
+---
+
 ## Fresh continuation checks — 24 November 2026
 
 - Focused PostgreSQL amendment, migration and adjudication suite: **37 passed**,
@@ -327,3 +343,70 @@ entry reports are not substituted for a fresh baseline. Original 401/402/404 ass
 and all 50 Val references were rehashed. Readable failure-log copies are sanitized;
 original private evidence is retained. No credentials/tokens/medical contents appear
 in these reports. Both authorization flags remain false in every review state.
+
+## 2026-11-25 structured PDF follow-up (fresh)
+
+- `python -B -m pytest -q tests/test_stenosis_reporting.py` against a newly created loopback-only disposable PostgreSQL 18 container: **26 passed**, one Starlette/httpx deprecation warning. Container removed after the test; its nine newly created, dangling anonymous test volumes were identified by creation time/anonymous-volume label, verified unused by all containers, and removed. Staging/demo containers and named volumes were preserved.
+- `npm test`: **651 passed**, 0 failed/skipped.
+- `npm run test:e2e -- tests/e2e/reporting.spec.js`: **16 passed**; these browser tests use mocked API responses.
+- `npm run build`: passed; Vite warned that several imaging-related chunks exceed 500 kB. `npm run lint`: exit 0 with the existing `AuthContext.jsx` fast-refresh warning.
+- Generated synthetic PDFs were parsed and every rendered page inspected: zero-candidate report 1 page; two-candidate report 2 pages; failed/status-only report 1 page. Page numbering was present; no replacement characters or `Skip to content` text was found.
+- Temporary test environment only: `pip check` passed. No patient data, production/local application DB or staging DB was used.
+
+## M3 focused research regression run - 2026-11-25
+
+Command from `backend/`: `python -B -m pytest --noconftest -q --tb=short tests/test_tiled_candidate_profile.py tests/test_research_profile_cli.py tests/test_experimental_candidates.py tests/test_research_profile_evidence.py tests/test_automatic_branch_cli.py tests/test_automatic_branch_plan.py tests/test_branch_characterization.py tests/test_vessel_analysis.py` (disposable venv interpreter). Result: **211 passed**, exit 0, 26.33 s. These are synthetic/offline geometry, source-binding, branch/refusal, CLI and vessel-analysis regressions; they do not validate anatomy or clinical stenosis detection.
+
+## 2026-11-25 synthetic 3D CNN experiment
+
+- Optional runtime: isolated Python 3.14 venv, PyTorch `2.15.0+cpu`; project/default API environment was not changed.
+- Combined offline research and optional model command from `backend/`: `python -B -m pytest --noconftest -q --tb=short tests/test_tiled_candidate_profile.py tests/test_research_profile_cli.py tests/test_experimental_candidates.py tests/test_research_profile_evidence.py tests/test_automatic_branch_cli.py tests/test_automatic_branch_plan.py tests/test_branch_characterization.py tests/test_vessel_analysis.py tests/test_synthetic_stenosis_ml.py` with the isolated torch site-packages on `PYTHONPATH`: **214 passed**, exit 0, 26.32 s.
+- Training command: `python -B scripts/train_synthetic_stenosis.py --output <new-external-run-directory> --samples 500 --epochs 50 --seed 1729`. It trained a synthetic-only 3D CNN; split counts were train 300 / validation 100 / test 100 with disjoint sample IDs. Checkpoint reload, synthetic-provenance inference, modified-input refusal, and 24x24x24 3D Grad-CAM smoke test passed.
+- Held-out synthetic test metrics only: accuracy 0.31; macro precision 0.315238; macro recall 0.31; macro F1 0.307646; n=100. This is weak and does not establish clinical or real-image performance.
+- A reproducible `moderate` synthetic phantom smoke case was misclassified as `normal`; the trained checkpoint is not considered a useful classifier.
+- Checkpoint: `F:\vascuai-artifacts\runs\milestone3-synthetic-cnn-20261125T1245-v5+0530\synthetic-stenosis-cnn3d.pt`; SHA-256 `a264d54a1fb4c370673ecaa7f8d3733982c0132b6e88e83dab1993cabb497937`. Run metadata, split IDs, dataset hash, training history, confusion matrix, and false authorization flags are in the adjacent `training-summary.json`.
+- No API/browser/Docker integration or medical-data tests were run for this synthetic-only model; none was added. No clinical or training release authorization was enabled.
+
+## 2026-11-25 synthetic stenosis workbench integration
+
+- `frontend-react`: `npm test` — **658 passed, 0 failed, 0 skipped**.
+- `frontend-react`: `npm run test:e2e -- tests/e2e/experimental-stenosis.spec.js` — **4 passed**. This browser suite mocks the API; it verifies synthetic generation/result rendering/export, unavailable-checkpoint state, clinician denial, and stale in-flight result invalidation after changing parameters, not a live FastAPI/model call.
+- `frontend-react`: `npm run lint` — exit **0**; warnings: existing `AuthContext.jsx` fast-refresh warning and two React hook/effect warnings in `ExperimentalStenosis.jsx`.
+- `frontend-react`: `npm run build` — passed; Vite reports imaging-related chunks larger than 500 kB.
+- `backend`: `python -m compileall -q app/schemas/experimental_stenosis.py app/routers/experimental_stenosis.py app/services/synthetic_stenosis_ml.py app/main.py app/core/config.py` — passed.
+- `backend`: standard `python -m pytest -q tests/test_experimental_stenosis_api.py tests/test_synthetic_stenosis_ml.py` — **blocked at conftest import** (`ModuleNotFoundError: reportlab`). Focused isolated command `python -m pytest --noconftest -q tests/test_experimental_stenosis_api.py tests/test_synthetic_stenosis_ml.py`, with ephemeral test settings and the pre-existing temporary PyTorch 2.15.0+cpu site-packages on `PYTHONPATH`, — **6 passed**. This included TestClient route/auth/input/checkpoint tests and actual temporary synthetic checkpoint inference/Grad-CAM tests; no app DB was used and no dependencies were installed.
+- The existing external v5 checkpoint was also freshly loaded by exact SHA-256 and used for a generated phantom smoke inference with the same isolated PyTorch package directory. Output: checkpoint digest matched; `synthetic_test_split_only` metadata accepted; analysis completed; 3 geometry candidates; Grad-CAM shape `[24,24,24]`; model predicted `normal`; both authorization flags remained false. This smoke prediction is not a clinical result and the model remains weak.
+- `git diff --check` and `git diff --cached --check` — passed. Existing staged manifest remains 164 paths with recorded cached patch hash `9855865864da347d36f1de5ad854c29ba167dbaf`; no staging operation was performed.
+
+## Fresh verification — 25 Nov 2026
+
+All logs are outside the repository at `F:\vascuai-artifacts\diagnostics\m3-test-evidence-20261125\`.
+
+| Area | Command / setup | Result |
+|---|---|---|
+| Backend | From `backend`: isolated Python 3.14 venv installed `requirements-dev.txt` (including existing `reportlab==5.1.0`); `python -B -m pytest -q --cov=app --cov-report=term`; SQLite-only `TESTING=true`, no `TEST_DATABASE_URL`; existing isolated PyTorch 2.15 CPU site-packages exposed by `PYTHONPATH` | **1006 passed, 197 skipped, 3 warnings, exit 0, 242.23 s.** PostgreSQL-only concurrency/integration cases skipped; not a PostgreSQL pass. |
+| Frontend unit | `npm test` | **658 passed, 0 failed, exit 0.** |
+| Frontend browser | `npm run test:e2e -- --reporter=line` | **221 passed, 3 skipped, exit 0, 3.4 min.** Three skips are explicit real-volume opt-in checks; no real dataset volume was supplied to this run. |
+| Live API browser, checkpoint configured | `npm run test:e2e -- tests/e2e/experimental-stenosis-live.spec.js --reporter=line`; real local FastAPI on loopback, fresh SQLite database migrated to Alembic head, temporary Researcher/Clinician accounts, pinned external synthetic checkpoint | **1 passed, exit 0.** Browser called real status/sample/analyze APIs, checked Grad-CAM and downloaded JSON; Clinician denied (403), invalid/extra case payloads rejected (422), both auth flags false. |
+| Live API browser, checkpoint absent | Same focused test with a separate local API process and no synthetic checkpoint environment variables | **1 passed, exit 0.** Status unavailable, sample remained usable, analysis action stayed disabled. |
+| Frontend lint | `npm run lint` | **exit 0**, 3 warnings: existing AuthContext fast-refresh warning and two warnings in `ExperimentalStenosis.jsx` (synchronous effect reset; effect cleanup ref access). |
+| Frontend production build | `npm run build` | **exit 0**; large chunk warning for NIfTI/wasm runtime assets. |
+| Candidate matrix | `pytest -q tests/test_synthetic_candidate_benchmark.py tests/test_synthetic_stenosis_ml.py tests/test_experimental_stenosis_api.py` | **13 passed, 1 warning** (focused run); same tests also included in full backend run. Separate exact metric calculation saved as `candidate-benchmark.json`. |
+| Frozen model evaluation | `backend/scripts/evaluate_synthetic_stenosis.py`, output `F:\vascuai-artifacts\runs\milestone3-synthetic-eval-20261125T191500Z-v2` | 500 balanced generated samples, disjoint 300/100/100 splits, checkpoint training hash overlap 0. Model synthetic test macro-F1 **0.2887**; geometry baseline **0.9594**; candidate precision **0.8774**, recall **0.9118**, mean localization error **0.3199 axial voxels**. |
+| Static/diff checks | Python AST parse of touched backend files; `git diff --check`; `git diff --cached --check` | See final command result in this report update; no source formatting changes from the check. |
+
+The first live-browser attempt used `.test` e-mail domains, which Pydantic EmailStr correctly rejected as reserved. The disposable QA account addresses were changed to `example.com`; no application code was changed for that setup issue. The first evaluation attempt is retained in separate `...-v1` with `RUN-STATUS.json` marking the provenance-validation failure; the successful run is `...-v2`. No artifacts were overwritten.
+
+No PostgreSQL service, staging database, Docker service, patient data, Testing split, or patient-case inference was used. Full suite skipped 197 PostgreSQL-dependent checks, so their behavior is not newly certified here. Both clinical and training authorization flags are false.
+
+## 25 Nov 2026 — separate real-volume research QC increment
+
+An authenticated, non-persistent endpoint was added at `POST /api/v1/experimental-stenosis/real-volume/analyze`. It accepts only a 3D `.nii`/`.nii.gz` CT and a matching binary 0/1 segmentation mask; both are size-bounded and validated for complete NIfTI payload, finite voxel values, equal dimensions, valid affines, affine alignment and compatible declared units. Temporary upload files are deleted after processing. The response records CT and mask-file SHA-256, native shape/orientation/spacing, RAS-mm spacing and a CT-bound geometry fingerprint when CT units support conversion.
+
+The response reports foreground voxel/component counts and, only for physical geometry and masks no larger than 4 million voxels, attempts the existing conservative experimental branch-graph extractor. The graph may abstain on topology, thinning or support checks; it is a digital skeleton diagnostic, not a validated anatomical centerline. The general input cap is 67,108,864 spatial voxels; automatic graph extraction has the stricter 4,000,000-voxel cap.
+
+Crucially, uploaded mask semantics are not source-attested. The ImageCAS audit identifies coronary artery segmentation masks, not lumen or lesion labels, and records unresolved mask units. Therefore the API returns no lesion candidates, no cross-sectional lumen profile, null reference/minimum lumen measurements, null percentage narrowing and null provisional severity. It never calls the synthetic CNN or Grad-CAM, persists no case/result, and enforces `clinical_validation=false`, `clinical_gate_authorized=false`, `training_release_authorized=false`. This completes a bounded real-volume input/QC and topology demonstration only; stenosis detection and measurement remain unavailable until a suitable source and its lumen semantics are independently verified.
+
+Fresh checks: backend focused tests **17 passed, 1 skipped** (optional synthetic Torch-runtime test); frontend unit suite **664 passed**; focused browser workflow **5 passed**; Python compile, frontend production build, lint and staged/unstaged `git diff --check` exited 0. Lint reported three existing warnings (AuthContext and synthetic page); build reported the existing large NIfTI/runtime chunks. Browser testing used mocked API responses; API tests used temporary NIfTI fixtures and role dependency overrides, not a live database. No original dataset file, patient data, staging, database, model checkpoint, or Docker resource was accessed. The 164 staged paths, branch and HEAD were preserved; no files were staged or committed.
+
+Final verification addendum (25 Nov 2026): after adding authorization-change invalidation coverage, the focused browser suite completed **6/6 passed**. The full application OpenAPI was generated under temporary test-only settings with warnings treated as errors and included `POST /api/v1/experimental-stenosis/real-volume/analyze` with unique operation ID `analyze_real_volume_research_upload`. The backend focused result remains **17 passed, 1 skipped**; the skip is the optional synthetic PyTorch runtime check. No patient, staging or production database was connected.

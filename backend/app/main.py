@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.evaluation_upload import EvaluationUploadBodyLimit
 from app.core.annotation_body import AnnotationBodyLimit
 from app.core.offline_research_body import OfflineResearchBodyLimit
+from app.core.real_volume_body import RealVolumeResearchBodyLimit
 from app.core.review_access import enforce_review_access
 from app.routers.auth import router as auth_router
 from app.routers.patients import router as patients_router
@@ -30,6 +31,8 @@ from app.routers.stenosis_explanations import router as stenosis_explanations_ro
 from app.routers.stenosis_reporting import router as stenosis_reporting_router
 from app.routers.evaluations import router as evaluations_router
 from app.routers.reference_profiles import router as reference_profiles_router
+from app.routers.experimental_stenosis import router as experimental_stenosis_router
+from app.routers.real_volume_research import router as real_volume_research_router
 from app.database.session import check_database_connection
 
 
@@ -48,6 +51,8 @@ app = FastAPI(
 app.add_middleware(EvaluationUploadBodyLimit, path=f"{settings.API_V1_STR}/evaluations/artifacts")
 app.add_middleware(AnnotationBodyLimit, prefix=settings.API_V1_STR)
 app.add_middleware(OfflineResearchBodyLimit, prefix=settings.API_V1_STR)
+app.add_middleware(RealVolumeResearchBodyLimit,
+                   path=f"{settings.API_V1_STR}/experimental-stenosis/real-volume/analyze")
 app.add_middleware(CORSMiddleware, allow_origins=settings.CORS_ORIGINS,
                    allow_credentials=False, allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type", "Idempotency-Key"])
@@ -104,6 +109,8 @@ app.include_router(stenosis_explanations_router, prefix=settings.API_V1_STR)
 app.include_router(stenosis_reporting_router, prefix=settings.API_V1_STR)
 app.include_router(evaluations_router, prefix=settings.API_V1_STR)
 app.include_router(reference_profiles_router, prefix=settings.API_V1_STR)
+app.include_router(experimental_stenosis_router, prefix=settings.API_V1_STR)
+app.include_router(real_volume_research_router, prefix=settings.API_V1_STR)
 
 app.include_router(
     patients_router,

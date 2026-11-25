@@ -1,5 +1,28 @@
 # Release readiness
 
+## M3 synthetic geometry validation update — 25 November 2026
+
+**Not ready for clinical release or staging deployment.** A controlled synthetic
+measurement benchmark and experimental UI/export increment are available for
+research demonstration only. The benchmark covers 180 generated cases and 216
+lesions; its maximum absolute narrowing error was 13.08 percentage points. It does
+not establish accuracy on CT anatomy, clinical calibration, reviewer qualification,
+or clinical utility. Confidence and uncertainty remain unavailable (null).
+
+Both `clinical_gate_authorized` and `training_release_authorized` remain false.
+The frozen CNN checkpoint is unchanged and its evaluation remains separate from
+the geometric benchmark. No database, staging service, Testing split or deployment
+was accessed for this increment. Release blockers in the prior report still apply,
+including current-schema backup/restore, migrations and controlled staging approval.
+
+**Demonstration recommendation:** acceptable only as a synthetic software/research
+workflow, with the synthetic notice visible and the weak CNN result, generator-only
+metrics, unavailable confidence, and absence of expert/clinical validation stated.
+Do not demonstrate it as patient-case stenosis analysis or as a completed clinical
+Milestone 3 outcome.
+
+---
+
 ## Continuation gate — 24 November 2026
 
 **Still not ready to publish or deploy.** Fresh frontend checks pass (650 tests,
@@ -133,6 +156,10 @@ validated severity/percentage output, calibrated confidence or stenosis attribut
 Local simulated records are not expert labels or trusted immutable AI submissions.
 Both clinical_gate_authorized and training_release_authorized remain false.
 
+## 2026-11-25 synthetic model experiment
+
+An optional, non-deployed synthetic-only 3D CNN was trained in an isolated CPU environment and has a real held-out synthetic result (0.31 accuracy, macro-F1 0.3076, n=100). Its weak metrics and synthetic-only distribution make it unsuitable for patients. Inference requires the supplied phantom to reproduce byte-for-byte from the generator; it is not registered as a clinical or case-analysis provider. 3D Grad-CAM is available only on those generated phantoms. No API, database, frontend, Docker image, staging deployment, clinical gate or training-release authorization changed. This does not clear any release blocker or complete Milestone 3.
+
 
 ---
 
@@ -235,3 +262,40 @@ No clinical stenosis classifier, validated severity/percentage or genuine stenos
 XAI is established. Testing remains held out. Embedded third-reader CT and versioned
 amendment/reassignment are not implemented; verified CT download is available.
 Host privacy/remote-access assumptions were not resolved by loopback Docker checks.
+
+## 2026-11-25 local-only addition
+
+A structured, authenticated PDF research-report endpoint and browser download are implemented and locally verified with synthetic fixtures. The output is generated from the backend report snapshot, not webpage printing; it does not include CT/overlay figures because the structured report source exposes no image payload. This change remains unstaged/undeployed relative to the existing staged snapshot; no release or staging readiness is implied. The broader UI/UX audit is still outstanding, and clinical stenosis functionality remains blocked by missing qualified lesion supervision and validation.
+
+## 2026-11-25 synthetic experimental workbench
+
+The separate synthetic-only stenosis workbench is locally integrated but not release-verified. It requires an operator-configured external synthetic checkpoint path and matching SHA-256; with no configuration the API reports model inference unavailable while synthetic sample generation remains available. The current checkpoint is weak on a synthetic held-out set and must not be presented as a useful classifier. Browser tests used mocked API responses. Six focused isolated API/model tests passed with the pre-existing temporary PyTorch environment; the normal backend pytest setup is blocked because `reportlab` is missing in the available worktree interpreter. No Docker image was built and no deployment occurred. Release remains blocked pending dependency-complete full backend verification, security/runtime review, and ordinary deployment approval. Clinical validation and training-release flags remain false.
+
+## Milestone 3 data blocker update - 2026-11-25
+
+Primary-source review confirms the current model blocker: no verified, authorized 3D CTA lesion-level dataset is available in this worktree. ASOCA files require owner permission through UK Data Service; Zenodo 4638863 files require ethics approval/waiver evidence; ARCADE is 2D X-ray and its Zenodo record has no visible license declaration. No restricted files were accessed and no license assumptions were made. The offline geometry research workbench remains separate from clinical case analysis. Keep `clinical_gate_authorized=false` and `training_release_authorized=false`.
+
+## Release status update — 25 Nov 2026
+
+**Not release-ready for clinical use or deployment.** Current M3 work demonstrates a separate synthetic-only research workflow. A 180-phantom controlled detector benchmark and a 500-phantom frozen-model evaluation are reproducible, but the CNN macro-F1 is 0.2887 on its synthetic test split and the generator-informed baseline is not a fair real-world comparator. The checkpoint is unchanged and is not connected to case APIs.
+
+Verification passed for the available SQLite backend suite (1006 passed; 197 PostgreSQL-only skips), frontend unit suite (658), full browser suite (221 passed; 3 explicit real-volume skips), and two real local API/browser configurations (checkpoint available/unavailable). Lint/build passed with warnings listed in `TEST_EVIDENCE.md`. The live API test used only a new disposable local SQLite database and synthetic phantom input.
+
+M3 remains blocked on qualified lesion-level labels/independent review and clinical validation. No patient-volume stenosis prediction, clinically meaningful percentage/severity, calibrated confidence or clinical XAI exists. PostgreSQL-specific tests, current staging backup/restore freshness, release build identity, and staging rehearsal remain unverified here. No deployment was performed. Preserve `clinical_gate_authorized=false` and `training_release_authorized=false` in any future release.
+
+
+## Final M3 audit note ? 25 November 2026
+
+The synthetic-only M3 integration passed the available current-source unit/browser/build checks (backend 997 passed / 198 skipped / 2 warnings; frontend 662 passed; browser 221 passed / 4 gated skips; lint and build exit 0). PostgreSQL-only and Torch-dependent runtime behavior was not fully exercised in this audit. This does not change the release decision: no clinical deployment or patient-case stenosis demonstration is authorized or supported. Both clinical and training authorization flags remain false. M1/M2/M4 are not recertified here.
+
+## 25 Nov 2026 — separate real-volume research QC increment
+
+An authenticated, non-persistent endpoint was added at `POST /api/v1/experimental-stenosis/real-volume/analyze`. It accepts only a 3D `.nii`/`.nii.gz` CT and a matching binary 0/1 segmentation mask; both are size-bounded and validated for complete NIfTI payload, finite voxel values, equal dimensions, valid affines, affine alignment and compatible declared units. Temporary upload files are deleted after processing. The response records CT and mask-file SHA-256, native shape/orientation/spacing, RAS-mm spacing and a CT-bound geometry fingerprint when CT units support conversion.
+
+The response reports foreground voxel/component counts and, only for physical geometry and masks no larger than 4 million voxels, attempts the existing conservative experimental branch-graph extractor. The graph may abstain on topology, thinning or support checks; it is a digital skeleton diagnostic, not a validated anatomical centerline. The general input cap is 67,108,864 spatial voxels; automatic graph extraction has the stricter 4,000,000-voxel cap.
+
+Crucially, uploaded mask semantics are not source-attested. The ImageCAS audit identifies coronary artery segmentation masks, not lumen or lesion labels, and records unresolved mask units. Therefore the API returns no lesion candidates, no cross-sectional lumen profile, null reference/minimum lumen measurements, null percentage narrowing and null provisional severity. It never calls the synthetic CNN or Grad-CAM, persists no case/result, and enforces `clinical_validation=false`, `clinical_gate_authorized=false`, `training_release_authorized=false`. This completes a bounded real-volume input/QC and topology demonstration only; stenosis detection and measurement remain unavailable until a suitable source and its lumen semantics are independently verified.
+
+Fresh checks: backend focused tests **17 passed, 1 skipped** (optional synthetic Torch-runtime test); frontend unit suite **664 passed**; focused browser workflow **5 passed**; Python compile, frontend production build, lint and staged/unstaged `git diff --check` exited 0. Lint reported three existing warnings (AuthContext and synthetic page); build reported the existing large NIfTI/runtime chunks. Browser testing used mocked API responses; API tests used temporary NIfTI fixtures and role dependency overrides, not a live database. No original dataset file, patient data, staging, database, model checkpoint, or Docker resource was accessed. The 164 staged paths, branch and HEAD were preserved; no files were staged or committed.
+
+Final verification addendum (25 Nov 2026): after adding authorization-change invalidation coverage, the focused browser suite completed **6/6 passed**. The full application OpenAPI was generated under temporary test-only settings with warnings treated as errors and included `POST /api/v1/experimental-stenosis/real-volume/analyze` with unique operation ID `analyze_real_volume_research_upload`. The backend focused result remains **17 passed, 1 skipped**; the skip is the optional synthetic PyTorch runtime check. No patient, staging or production database was connected.

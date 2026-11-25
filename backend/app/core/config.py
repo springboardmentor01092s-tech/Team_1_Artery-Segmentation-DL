@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     # Optional immutable reference-only display pack; no inference or clinical gate.
     VASCULAI_REFERENCE_PROFILE_DIR: str | None = None
 
+    # Optional, isolated synthetic-only stenosis research experiment. This is
+    # intentionally separate from the patient-case clinical provider settings.
+    VASCULAI_SYNTHETIC_STENOSIS_CHECKPOINT: str | None = None
+    VASCULAI_SYNTHETIC_STENOSIS_CHECKPOINT_SHA256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+
     # Optional model runtime; normal APIs remain available without PyTorch/weights.
     VASCULAI_MODEL_CHECKPOINT: str | None = None
     # Explicit dispatch: historical checkpoints always retain the original recipe.

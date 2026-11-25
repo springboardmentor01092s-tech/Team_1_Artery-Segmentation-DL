@@ -1,5 +1,37 @@
 # Milestone task checklist
 
+## M3 geometry-measurement validation — 25 November 2026
+
+- [x] Build reproducible controlled synthetic benchmark with separate generator
+  ground truth; estimator receives no truth radii, lesion classes or truth labels.
+- [x] Evaluate reference radius, minimum radius, percentage narrowing, localization,
+  candidate detection and provisional threshold-category agreement.
+- [x] Exercise normal, single/multiple lesions, six orientations, three noise levels,
+  parameter boundaries and independent benchmark-held truth.
+- [x] Add request threshold validation and UI display/export provenance; the UI
+  explicitly shows measurement confidence and uncertainty as unavailable.
+- [ ] No clinical thresholds, confidence calibration, physical measurement validation,
+  expert labels, clinical review, or clinical/training authorization.
+- [ ] General M3 stenosis detection/classifier and clinical validation remain blocked.
+
+Frozen CNN was preserved separately (SHA-256
+`a264d54a1fb4c370673ecaa7f8d3733982c0132b6e88e83dab1993cabb497937`); its distinct
+held-out synthetic evaluation reported macro-F1 0.2887. This weak synthetic result
+is not evidence for clinical inference and is not combined with the geometry benchmark.
+
+Result artifact: `F:\vascuai-artifacts\runs\m3-synthetic-geometry-measurement-20261125T093700Z\measurement-benchmark.json` (deterministic repeat `T094000Z`, identical SHA-256).
+180 phantoms / 216 lesions; recall 0.9583, precision 1.0; profile percentage MAE
+2.2917 percentage points (max error 13.0818); localization MAE 0.3574 axial voxels,
+signed bias +0.0139 axial voxels.
+All figures are synthetic-generator-specific and not clinical performance claims.
+
+Final audit: synthetic-only Milestone 3 workflow may be demonstrated with explicit
+limitations. Clinical patient workflow, expert supervision, calibrated confidence,
+clinical severity, real-image validation and patient-integrated XAI remain blocked.
+M1/M2/M4 were regression-tested but not recertified by this audit.
+
+---
+
 ## Final engineering checklist
 
 Updated 24 November 2026. Evidence: `final-engineering-20261124T093721Z`.
@@ -202,3 +234,66 @@ Updated 24 November 2026 09:41 IST. Branch `codex/milestone3-review`; base HEAD 
 All 114 pre-resume changed paths were preserved (34 tracked modifications, 80
 untracked). No files were deleted to match a viewer count. Clinical requirements
 that remain blocked are not marked complete.
+
+## 2026-11-25 focused follow-up
+
+| Task | Status | Evidence / limitation | Deployed |
+|---|---|---|---|
+| Structured stenosis research PDF | Implemented and locally tested | Authenticated report snapshot endpoint; synthetic zero-finding, candidate and status-only layouts verified; source report contains no image payload, so no CT/overlay image is embedded | No |
+| Full UI/UX spacing and responsive cleanup | Partial / not audited end-to-end | Existing unit/e2e coverage is not a whole-app visual audit | No |
+| Clinical stenosis model and validation | Blocked | No qualified lesion-level labels or validated model; safety gates remain disabled | No |
+
+## Dataset supervision status - 2026-11-25
+
+- [x] Compared primary-source dataset modality, annotation type, access conditions and visible license metadata for ASOCA, Zenodo 4638863 and ARCADE.
+- [x] Confirmed ImageCAS/ImageCAS-X artery masks are not stenosis lesion labels.
+- [ ] Obtain lawful access to a compatible 3D CTA lesion-level dataset and verify its terms/labels.
+- [ ] Train/evaluate a lesion model on authorized lesion labels; no suitable real lesion data is currently available. The synthetic-only CNN is pipeline research evidence, not a real lesion model.
+
+## 2026-11-25 synthetic-only model experiment
+
+- [x] Implemented optional synthetic phantom generation, patient/sample-ID-separated train/validation/test splits, a 3D CNN training loop, validation-loss checkpoint selection, held-out metrics, checkpoint validation, synthetic-only inference and genuine 3D Grad-CAM: `backend/app/services/synthetic_stenosis_ml.py`.
+- [x] Trained and evaluated one model on 500 generated phantoms in an isolated PyTorch CPU environment. Held-out synthetic accuracy 0.31, macro-F1 0.3076 over 100 test phantoms; this is weak and has no patient-generalization meaning.
+- [ ] No real lesion-labeled dataset is available/authorized; no patient-case API or dashboard uses this classifier; no clinical severity, percentage, or stenosis Grad-CAM is enabled.
+- [ ] General automatic centerline extraction remains limited and the separate bounded geometry workflow still requires explicit source-bound branches for its admitted cases.
+
+## 2026-11-25 synthetic research UI/API integration
+
+| Requirement | Status | Evidence / limitation |
+|---|---|---|
+| Separate synthetic experimental workflow | Partial | Authenticated `/research/experimental-stenosis` page and `/api/v1/experimental-stenosis/{status,samples,analyze}` endpoints; only deterministic bounded server-generated phantoms accepted. |
+| Candidate localization and geometry summaries | Partial (synthetic only) | Candidate markers, profile plot and voxel-unit summary are rendered; no patient volume, RAS/mm measurements, or clinical result. |
+| 3D CNN inference and Grad-CAM | Partial / optional | API requires externally configured checkpoint path and exact SHA; actual isolated TestClient tests passed, and the existing v5 artifact passed fresh hash/load/phantom inference/Grad-CAM smoke verification. It predicted `normal` on this generated sample; its 0.31 synthetic holdout accuracy is weak and not clinically useful. |
+| Role boundary | Implemented in code; partially exercised | Admin/Data Scientist/Researcher route dependency; Clinician denied by focused browser flow; six direct isolated API/model tests passed. Normal app pytest collection still lacks `reportlab` in the worktree interpreter. |
+| Research export / history | Partial | Local JSON download of current response only; no persistence or server-side history. |
+| Clinical/training authorization | Safely unavailable | Response/checkpoint contracts hard-code false; never inferred from request; clinical output remains disabled. |
+
+The CLI is `backend/scripts/train_synthetic_stenosis.py`. The checkpoint is an external run artifact, not a deployed model. The default API requirements, routes, database, clinical gate and training-release gate were not changed.
+
+## Current verification update — 25 Nov 2026
+
+- [x] M3 deterministic controlled synthetic detector tests across 5 generated classes, 6 axis orientations, 3 noise levels and multiple lesions; result: 180 cases, 1.000 precision, 0.9583 recall, 0.3574 mean axial-voxel localization error, 0 false candidates on 36 normal controls.
+- [x] Separate reproducible 500-sample synthetic evaluation manifest with 300/100/100 disjoint reservations, balanced classes, unique hashes and zero overlap with frozen checkpoint training inputs.
+- [x] Existing synthetic checkpoint reevaluated without modification: synthetic test macro-F1 0.2887; simple geometry baseline 0.9594 (uses generator geometry; not a fair clinical/deployment baseline).
+- [x] Backend full available suite: 1006 passed, 197 skipped (PostgreSQL-only cases), 3 warnings. Frontend unit 658 passed; browser 221 passed/3 skipped; actual-API browser 2 configurations passed.
+- [ ] M3 qualified lesion labels, clinical model, validated severity/percentage, calibrated confidence and clinical XAI remain blocked/unavailable.
+- [ ] M4 PostgreSQL-backed reviewer concurrency suite was not rerun in this SQLite-only test environment; staging backup/restore and deployment were not attempted.
+
+M1/M2 prior accepted evidence and all prior M4 changes are preserved; they were not rerun as a separate milestone certification in this increment. Both authorization flags remain false.
+
+
+## Final integration audit ? 25 November 2026
+
+M3 implementation status remains **partial (synthetic-only)**. The final current-source run recorded backend 997 passed / 198 skipped / 2 warnings, frontend 662 passed, browser 221 passed / 4 gated skips, and lint/build exit 0. See `TEST_EVIDENCE.md` for exact evidence and environment limitations. Clinical lesion labels, calibrated confidence, validated physical measurements, patient-image performance and clinical authorization remain missing. M1/M2/M4 were regression-tested but not recertified.
+
+## 25 Nov 2026 — separate real-volume research QC increment
+
+An authenticated, non-persistent endpoint was added at `POST /api/v1/experimental-stenosis/real-volume/analyze`. It accepts only a 3D `.nii`/`.nii.gz` CT and a matching binary 0/1 segmentation mask; both are size-bounded and validated for complete NIfTI payload, finite voxel values, equal dimensions, valid affines, affine alignment and compatible declared units. Temporary upload files are deleted after processing. The response records CT and mask-file SHA-256, native shape/orientation/spacing, RAS-mm spacing and a CT-bound geometry fingerprint when CT units support conversion.
+
+The response reports foreground voxel/component counts and, only for physical geometry and masks no larger than 4 million voxels, attempts the existing conservative experimental branch-graph extractor. The graph may abstain on topology, thinning or support checks; it is a digital skeleton diagnostic, not a validated anatomical centerline. The general input cap is 67,108,864 spatial voxels; automatic graph extraction has the stricter 4,000,000-voxel cap.
+
+Crucially, uploaded mask semantics are not source-attested. The ImageCAS audit identifies coronary artery segmentation masks, not lumen or lesion labels, and records unresolved mask units. Therefore the API returns no lesion candidates, no cross-sectional lumen profile, null reference/minimum lumen measurements, null percentage narrowing and null provisional severity. It never calls the synthetic CNN or Grad-CAM, persists no case/result, and enforces `clinical_validation=false`, `clinical_gate_authorized=false`, `training_release_authorized=false`. This completes a bounded real-volume input/QC and topology demonstration only; stenosis detection and measurement remain unavailable until a suitable source and its lumen semantics are independently verified.
+
+Fresh checks: backend focused tests **17 passed, 1 skipped** (optional synthetic Torch-runtime test); frontend unit suite **664 passed**; focused browser workflow **5 passed**; Python compile, frontend production build, lint and staged/unstaged `git diff --check` exited 0. Lint reported three existing warnings (AuthContext and synthetic page); build reported the existing large NIfTI/runtime chunks. Browser testing used mocked API responses; API tests used temporary NIfTI fixtures and role dependency overrides, not a live database. No original dataset file, patient data, staging, database, model checkpoint, or Docker resource was accessed. The 164 staged paths, branch and HEAD were preserved; no files were staged or committed.
+
+Final verification addendum (25 Nov 2026): after adding authorization-change invalidation coverage, the focused browser suite completed **6/6 passed**. The full application OpenAPI was generated under temporary test-only settings with warnings treated as errors and included `POST /api/v1/experimental-stenosis/real-volume/analyze` with unique operation ID `analyze_real_volume_research_upload`. The backend focused result remains **17 passed, 1 skipped**; the skip is the optional synthetic PyTorch runtime check. No patient, staging or production database was connected.

@@ -11,6 +11,7 @@ from app.core.roles import CLINICAL_WRITERS
 from app.routers.cases import AuthenticatedCaseReader, ClinicalWriter, DatabaseSession
 from app.schemas.stenosis_reporting import AnalyticsFilters, AnalyticsSummary, AnalysisIndex, TrendResponse, StenosisReport, JobStatus
 from app.services import stenosis_analytics as analytics, stenosis_reporting as reports
+from app.services.pdf_reports import render_stenosis_report
 from app.services.audit import record_event
 
 router = APIRouter(tags=["Stenosis analytics and reports"])
@@ -84,6 +85,16 @@ def patient_summary(patient_id:int,current_user:ClinicalWriter,db:DatabaseSessio
 def get_report(case_id:int,analysis_id:UUID,current_user:AuthenticatedCaseReader,db:DatabaseSession,response:Response):
     with snapshot(db) as read: result=reports.report(read,case_id,analysis_id)
     finish(db,current_user,response,"stenosis.report_read",case_id);return result
+
+
+@router.get("/cases/{case_id}/stenosis/analyses/{analysis_id}/report.pdf")
+def get_report_pdf(case_id:int,analysis_id:UUID,current_user:AuthenticatedCaseReader,db:DatabaseSession,response:Response):
+    with snapshot(db) as read: report=reports.report(read,case_id,analysis_id)
+    content=render_stenosis_report(report)
+    response=Response(content=content,media_type="application/pdf",headers={
+        "Content-Disposition":f'attachment; filename="vascuai-stenosis-{analysis_id}.pdf"',
+    })
+    finish(db,current_user,response,"stenosis.report_pdf_export",case_id);return response
 
 
 @router.get("/cases/{case_id}/stenosis/analyses/{analysis_id}/report.csv")

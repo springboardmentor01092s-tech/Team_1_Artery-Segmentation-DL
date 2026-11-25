@@ -17,11 +17,12 @@ function Report({caseId,analysisId}){
   const report=latest||state.data;
   async function exportReport(format){setBusy(true);setError('');try{
     if(format==='csv'){saveArtifact({blob:await stenosisApi.reportCsv(caseId,analysisId),filename:`vascuai-stenosis-${analysisId}.csv`});}
-    else{const fresh=await stenosisApi.report(caseId,analysisId);setLatest(fresh);if(format==='json')saveArtifact({blob:reportJsonBlob(fresh),filename:`vascuai-stenosis-${analysisId}.json`});else requestAnimationFrame(()=>window.print());}
+    else if(format==='pdf'){saveArtifact({blob:await stenosisApi.reportPdf(caseId,analysisId),filename:`vascuai-stenosis-${analysisId}.pdf`});}
+    else{const fresh=await stenosisApi.report(caseId,analysisId);setLatest(fresh);saveArtifact({blob:reportJsonBlob(fresh),filename:`vascuai-stenosis-${analysisId}.json`});}
   }catch(failure){setError(failure.message);}finally{setBusy(false);}}
   return <AppShell breadcrumbs={[{label:'Reports',href:'/reports'},{label:`Case ${caseId}`,href:`/cases/${caseId}`},{label:'Stenosis research report'}]}>
     <PageHeader eyebrow="RESEARCH REPORT" title="Stenosis analysis report" description="On-demand snapshot of authorized persisted analysis records">
-      {report&&<><button className="btn btn-ghost" disabled={busy} onClick={()=>exportReport('json')}>Download report JSON</button><button className="btn btn-ghost" disabled={busy||report.report_state!=='completed'} onClick={()=>exportReport('csv')}>Download findings CSV</button><button className="btn btn-primary" disabled={busy} onClick={()=>exportReport('print')}>Print / Save as PDF</button></>}
+      {report&&<><button className="btn btn-ghost" disabled={busy} onClick={()=>exportReport('json')}>Download report JSON</button><button className="btn btn-ghost" disabled={busy||report.report_state!=='completed'} onClick={()=>exportReport('csv')}>Download findings CSV</button><button className="btn btn-primary" disabled={busy} onClick={()=>exportReport('pdf')}>Download structured PDF</button></>}
     </PageHeader>
     <div className="no-print page-actions"><Link to={`/cases/${caseId}/stenosis`}>Open stenosis workspace and history</Link><Link to={`/cases/${caseId}/analysis`}>Open protected segmentation workspace</Link></div>
     {!analysisId?<><p className="notice">No analysis selected. Analysis execution is unavailable without a genuine provider. Select an existing analysis below; an empty history means not performed, not a negative finding.</p><StenosisAnalytics caseId={caseId}/></>:<>

@@ -23,6 +23,10 @@ async function reportSetup(page,options={}){
     calls.push(route.request().headers().authorization);
     return route.fulfill({contentType:'text/csv;charset=utf-8',body:record.report_state==='completed'&&record.result.result.lesions.length?'"schema_version","lesion_id","vessel_label"\r\n"1.0","'+record.result.result.lesions[0].lesion_id+'","\'=SUM(1,2)"\r\n':'"schema_version","lesion_id","vessel_label"\r\n'});
   });
+  await page.route('**/api/v1/cases/1/stenosis/analyses/*/report.pdf',route=>{
+    calls.push(route.request().headers().authorization);
+    return route.fulfill({contentType:'application/pdf',body:'%PDF-1.4\n% synthetic route fixture only\n%%EOF'});
+  });
   return{record,calls,url:`/cases/1/stenosis/report/${record.analysis.analysis_id}`};
 }
 test('dashboard keeps generic case completion separate from zero stenosis records',async({page})=>{
@@ -61,12 +65,13 @@ test('patient filters follow existing roles and mobile analytics is accessible',
 test('case report shows multiple supplied lesions and explicit missing measurements',async({page})=>{
   const fixture=await reportSetup(page);await page.goto(fixture.url);
   await expect(page.locator('.report-lesion')).toHaveCount(3);await expect(page.getByText(/Unavailable: Synthetic fixture: not supplied/)).not.toHaveCount(0);
+  await expect(page.getByText('Subject ID',{exact:true})).toBeVisible();
   await expect(page.getByText(/Experimental research prototype. Not a clinically validated diagnosis/)).toBeVisible();
 });
 test('JSON and formula-safe CSV are downloaded through authorized report retrieval',async({page})=>{
   const fixture=await reportSetup(page);await page.goto(fixture.url);
   const jsonPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Download report JSON'}).click();const json=await jsonPromise;
-  const body=JSON.parse(await readFile(await json.path(),'utf8'));expect(body.schema_version).toBe('1.0');expect(body.result.result.lesions).toHaveLength(3);expect(JSON.stringify(body)).not.toMatch(/claim_token|volume_path|password_hash/);
+  const body=JSON.parse(await readFile(await json.path(),'utf8'));expect(body.schema_version).toBe('1.0');expect(body.case.patient_id).toBe(1);expect(body.result.result.lesions).toHaveLength(3);expect(JSON.stringify(body)).not.toMatch(/claim_token|volume_path|password_hash/);
   const csvPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Download findings CSV'}).click();const csv=await csvPromise;
   expect(csv.suggestedFilename()).toMatch(/^vascuai-stenosis-.*\.csv$/);expect(await readFile(await csv.path(),'utf8')).toContain("'=SUM(1,2)");expect(fixture.calls.every(auth=>auth==='Bearer browser-test-token')).toBe(true);
 });
@@ -77,9 +82,11 @@ test('completed zero-lesion report retains context and exports header-only CSV',
 for(const state of ['failed','running','stale','integrity_error'])test(`${state} report withholds findings and disables CSV`,async({page})=>{
   const fixture=await reportSetup(page,{state});await page.goto(fixture.url);await expect(page.getByText(/No completed findings are presented/)).toBeVisible();await expect(page.locator('.report-lesion')).toHaveCount(0);await expect(page.getByRole('button',{name:'Download findings CSV'})).toBeDisabled();
 });
-test('print retains report metadata and warnings while removing application chrome',async({page})=>{
-  const fixture=await reportSetup(page);await page.addInitScript(()=>{window.print=()=>{window.__printed=true;};});await page.goto(fixture.url);await page.getByRole('button',{name:'Print / Save as PDF'}).click();await expect.poll(()=>page.evaluate(()=>window.__printed)).toBe(true);
-  await page.emulateMedia({media:'print'});await expect(page.locator('.topbar')).toBeHidden();await expect(page.getByRole('button',{name:'Download report JSON'})).toBeHidden();await expect(page.locator('.report-sheet .notice')).toBeVisible();await expect(page.locator('.report-lesion')).toHaveCount(3);
+test('structured PDF downloads without printing webpage chrome',async({page})=>{
+  const fixture=await reportSetup(page);await page.addInitScript(()=>{window.print=()=>{window.__printed=true;};});await page.goto(fixture.url);
+  const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download structured PDF'}).click();const download=await pending;
+  const bytes=await readFile(await download.path());expect(download.suggestedFilename()).toMatch(/^vascuai-stenosis-.*\.pdf$/);expect(bytes.subarray(0,5).toString()).toBe('%PDF-');expect(bytes.includes(Buffer.from('Skip to content'))).toBe(false);
+  expect(await page.evaluate(()=>Boolean(window.__printed))).toBe(false);expect(fixture.calls.every(auth=>auth==='Bearer browser-test-token')).toBe(true);
 });
 test('case reporting without an analysis is unavailable/not performed, not a findings report',async({page})=>{
   await installApi(page);await page.goto('/cases/1/stenosis/report');await expect(page.getByText(/No analysis selected/)).toBeVisible();await expect(page.getByText(/No stenosis analyses are recorded/)).toBeVisible();await expect(page.getByRole('button',{name:'Download report JSON'})).toHaveCount(0);
