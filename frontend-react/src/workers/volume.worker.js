@@ -1,31 +1,10 @@
-import { Gunzip } from 'fflate';
+import { decode } from '../lib/nifti-decode.js';
+export { decode } from '../lib/nifti-decode.js';
 import { inspectVolume, validatePair, MAX_TRANSFER_BYTES } from '../lib/volume-geometry.js';
 import { inspectAttribution, MAX_ATTRIBUTION_BYTES, MAX_ATTRIBUTION_EXPANDED } from '../lib/attribution.js';
 
 function checkTransferSize(buffer) {
   if (buffer.byteLength > MAX_TRANSFER_BYTES) throw new Error('Volume input exceeds the browser transfer limit.');
-}
-
-export function decode(buffer, expectedLimit) {
-  checkTransferSize(buffer);
-  const bytes = new Uint8Array(buffer);
-  if (bytes[0] !== 31 || bytes[1] !== 139) {
-    if (buffer.byteLength > expectedLimit) throw new Error('Uncompressed volume exceeds the expected output limit.');
-    return buffer;
-  }
-  const chunks = [];
-  let length = 0;
-  const unzip = new Gunzip(chunk => {
-    length += chunk.length;
-    if (length > expectedLimit || length > MAX_TRANSFER_BYTES) throw new Error('Decompressed volume exceeds the browser memory limit.');
-    chunks.push(chunk);
-  });
-  // Bounded pushes let the decompressor enforce a limit before assembling output.
-  for (let offset = 0; offset < bytes.length; offset += 64 * 1024) unzip.push(bytes.subarray(offset, offset + 64 * 1024), offset + 64 * 1024 >= bytes.length);
-  const output = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) { output.set(chunk, offset); offset += chunk.length; }
-  return output.buffer;
 }
 
 if (typeof self !== 'undefined') self.onmessage = async ({ data: { ct, mask, region, attribution, explanation, artifact_sha256, metadata } }) => {

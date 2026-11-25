@@ -25,6 +25,20 @@ export function evaluationFixture(n = 1) {
       exclusion_reason: id === 2 ? 'Synthetic exclusion' : null, mask_provenance: { origin: 'reference_annotation', mask_sha256: 'd'.repeat(64) }, sections: [] })) };
   return { identity: { ...identity, case_ids: [1,2] }, summary, cases };
 }
+export function supplementalFixture() {
+  const values = { voxel_accuracy: 0, specificity: null, sensitivity: 0, f1_score: 0 };
+  const names = Object.keys(values);
+  return { version: 'confusion-derived/1.0', source: 'stored_case_confusion_counts', zero_denominator: 'null',
+    macro_metrics: { ...values }, pooled_micro_metrics: { ...values },
+    pooled_unavailable_reasons: { specificity: 'zero_denominator' },
+    macro_denominators: Object.fromEntries(names.map(key => [key, { defined_cases: values[key] === null ? 0 : 1, undefined_cases: values[key] === null ? 1 : 0 }])),
+    formulas: { voxel_accuracy: '(TP+TN)/(TP+TN+FP+FN)', specificity: 'TN/(TN+FP)', sensitivity: 'TP/(TP+FN)', f1_score: '2TP/(2TP+FP+FN)' },
+    per_case: [{ case_id: 1, included: true, exclusion_reason: null, metrics: { ...values }, unavailable_reasons: { specificity: 'zero_denominator' } },
+      { case_id: 2, included: false, exclusion_reason: 'Synthetic exclusion', metrics: Object.fromEntries(names.map(key => [key, null])),
+        unavailable_reasons: Object.fromEntries(names.map(key => [key, 'confusion_counts_unavailable'])) }],
+    surface_distances: { status: 'unavailable_not_computed', hausdorff_distance: null, average_surface_distance: null, units: null,
+      reason: 'Surface geometry is not contained in confusion counts.' } };
+}
 export const indexFixture = (rows = []) => ({ items: rows, limit: 20, offset: 0, next_offset: null, offset_limit_reached: false });
 export function runsFixture(row) {
   return { model: row.metadata.model, training_runs: [{ id: row.model_run_id, training_run_id: row.metadata.checkpoint.training_run_id,

@@ -17,6 +17,7 @@ from app.schemas.evaluation import EvaluationDocument, CaseEvaluation
 from app.services.audit import record_event
 from app.core.evaluation_upload import MAX_EVALUATION_FILE_BYTES
 from app.services.source_fingerprint import file_version, source_sha256
+from app.services.evaluation_statistics import supplemental_metrics
 
 MAX_ARTIFACT_BYTES = MAX_EVALUATION_FILE_BYTES
 MAX_HISTORY_OFFSET = 1000000
@@ -241,13 +242,14 @@ def summary(row, cases):
                 exclusions=[dict(case_id=c.case_id, reason=c.exclusion_reason) for c in cases if c.exclusion_reason],
                 headline_aggregation="macro_unweighted_per_case", macro_metrics=macro, macro_denominators=denominators,
                 pooled_micro_metrics=pooled, pooled_status="available" if pooled is not None else "unavailable_without_complete_included_confusion_counts",
-                metric_formulas=FORMULAS, zero_denominator="null", undefined_macro_policy="omit_undefined_per_metric_and_report_count")
+                metric_formulas=FORMULAS, zero_denominator="null", undefined_macro_policy="omit_undefined_per_metric_and_report_count",
+                supplemental_metrics=supplemental_metrics(cases))
 
 
 def case_details(row, cases):
     return dict(**identity(row), metric_definitions=row.metadata_json["metric_definitions"], metric_formulas=FORMULAS,
                 undefined_macro_policy="omit_undefined_per_metric_and_report_count",
-                cases=[c.model_dump(mode="json") for c in cases])
+                cases=[c.model_dump(mode="json") for c in cases], supplemental_metrics=supplemental_metrics(cases))
 
 
 def comparison(db, identifiers):

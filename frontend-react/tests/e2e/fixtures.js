@@ -134,6 +134,10 @@ export async function installApi(
             uploaded_at: "2026-10-16T10:00:00Z",
           })
         : json({ detail: "No volume" }, 404);
+    if (/^\/cases\/\d+\/segmentation-config$/.test(path) && method === "GET") return json({
+      architecture: 'smallunet3d', default_threshold: .70, threshold_adjustable: true,
+      status: 'configured_not_verified', experimental: true, clinical_validation: false,
+    });
     if (/^\/cases\/\d+\/segmentations$/.test(path) && method === "GET") return json([]);
     if (path === '/stenosis/analytics/summary' || /^\/cases\/\d+\/stenosis\/analytics$/.test(path)) return json(summaryFixture({patientAllowed:['Admin','Clinician'].includes(role),caseId:path.startsWith('/cases/')?Number(path.split('/')[2]):null}));
     if (path === '/stenosis/analytics/analyses') return json(indexFixture());

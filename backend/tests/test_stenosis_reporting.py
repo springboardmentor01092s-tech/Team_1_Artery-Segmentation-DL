@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from fastapi import HTTPException
 import pytest
 from sqlalchemy import update
-from app.models import Case, Patient, SegmentationResult, StenosisAnalysisJob as Job
+from app.models import Case, Patient, SegmentationResult, StenosisAnalysisJob as Job, StenosisLesion, StenosisAnalysisResult
 from app.services import stenosis_jobs as jobs, stenosis_results as results, stenosis_analytics as analytics, source_fingerprint as fingerprints
 from app.services.stenosis_reporting import csv_cell
 from app.schemas.stenosis_reporting import AnalyticsFilters
@@ -150,6 +150,89 @@ def test_reports_json_csv_row_semantics_and_formula_safety(client,db,volume,runt
     assert client.get(endpoint(volume,job).replace(f'cases/{volume.case_id}',f'cases/{volume.case_id+1}')+'/report',headers=volume.headers).status_code==404
 
 
+@pytest.mark.parametrize('count',[0,2])
+def test_structured_pdf_contains_real_report_fields_and_no_webpage_content(client,db,volume,runtime,count,tmp_path):
+    job,_=completed(db,volume,runtime,count)
+    response=client.get(endpoint(volume,job)+'/report.pdf',headers=volume.headers)
+    assert response.status_code==200
+    assert response.headers['content-type'].startswith('application/pdf')
+    assert response.headers['content-disposition']==f'attachment; filename="vascuai-stenosis-{job.analysis_id}.pdf"'
+    assert response.headers['cache-control']=='no-store'
+    assert response.headers['x-content-type-options']=='nosniff'
+    content=response.content
+    (tmp_path/f'report-{count}-candidates.pdf').write_bytes(content)
+    assert content.startswith(b'%PDF-') and b'%%EOF' in content
+    assert b'/Type /Page' in content and b'xref' in content and b'trailer' in content
+    assert b'VascuAI' in content and str(job.analysis_id).encode() in content
+    case=db.get(Case,volume.case_id)
+    assert case.case_code.encode() in content
+    assert b'Subject ID' in content
+    assert str(case.patient_id).encode() in content
+    assert b'not a clinically validated' in content.lower()
+    assert b'Skip to content' not in content and b'Print / Save as PDF' not in content
+    if count==0:
+        assert b'No candidate lesion records were stored' in content
+    else:
+        assert b'Candidate record 1' in content
+        assert b'Unavailable:' in content
+    assert client.get(endpoint(volume,job).replace(f'cases/{volume.case_id}',f'cases/{volume.case_id+1}')+'/report.pdf',headers=volume.headers).status_code==404
+
+
+def test_pdf_escapes_hostile_case_and_report_text_as_literal_text(client,db,volume,runtime):
+    case_markup="<font color='white'>CASE_STRUCTURE_TOKEN</font>"
+    lesion_markup="</para><para>LESION_STRUCTURE_TOKEN</para><para>"
+    def inject(payload): payload['lesions'][0]['vessel_label']=lesion_markup
+    job,_=completed(db,volume,runtime,count=1,change=inject)
+    case=db.get(Case,volume.case_id);case.case_code=case_markup;db.commit()
+
+    response=client.get(endpoint(volume,job)+'/report.pdf',headers=volume.headers)
+    assert response.status_code==200
+    # With ReportLab markup interpreted, these tags would disappear from the
+    # rendered text (or break parsing); escaped values remain literal PDF text.
+    assert case_markup.encode() in response.content
+    assert lesion_markup.encode() in response.content
+    assert response.content.count(b'CASE_STRUCTURE_TOKEN')==1
+    assert response.content.count(b'LESION_STRUCTURE_TOKEN')==1
+
+
+def test_malformed_persisted_result_becomes_controlled_integrity_report(client,db,volume,runtime):
+    job,result_id=completed(db,volume,runtime,count=1)
+    result=db.get(StenosisAnalysisResult,str(result_id))
+    lesion=db.query(StenosisLesion).filter_by(result_id=result.id).first()
+    lesion.payload_json={'lesion_id':'malformed fixture only'}
+    db.commit();db.expire_all()
+
+    response=client.get(endpoint(volume,job)+'/report.pdf',headers=volume.headers)
+    assert response.status_code==200 and response.content.startswith(b'%PDF-')
+    assert b'Findings unavailable' in response.content
+    assert b'no completed findings are included' in response.content.lower()
+    assert b'Candidate record' not in response.content
+
+
+def test_report_json_and_csv_preserve_numeric_patient_identifier(client,db,volume,runtime):
+    job,_=completed(db,volume,runtime,count=1)
+    patient_id=db.get(Case,volume.case_id).patient_id
+    report=client.get(endpoint(volume,job)+'/report',headers=volume.headers)
+    assert report.status_code==200
+    assert report.json()['schema_version']=='1.0'
+    assert report.json()['case']['patient_id']==patient_id
+    csv_response=client.get(endpoint(volume,job)+'/report.csv',headers=volume.headers)
+    assert csv_response.status_code==200
+    parsed=list(csv.reader(io.StringIO(csv_response.text)))
+    assert parsed[0][4]=='patient_id'
+    assert int(parsed[1][4])==patient_id
+
+
+def test_status_only_pdf_is_generated_without_findings(client,db,volume,runtime,tmp_path):
+    job,token,_=claimed(db,volume,runtime)
+    jobs.fail_job(db,job.analysis_id,'provider_error',token)
+    response=client.get(endpoint(volume,job)+'/report.pdf',headers=volume.headers)
+    assert response.status_code==200 and response.content.startswith(b'%PDF-')
+    (tmp_path/'report-status-only.pdf').write_bytes(response.content)
+    assert b'Findings unavailable' in response.content and b'No completed findings are included' in response.content
+    assert b'Candidate record' not in response.content
+
+
 @pytest.mark.parametrize('status',['queued','running','failed','stale'])
 def test_status_only_reports_never_export_completed_findings(client,db,volume,runtime,status):
     job,token,payload=claimed(db,volume,runtime)
@@ -165,7 +248,7 @@ def test_status_only_reports_never_export_completed_findings(client,db,volume,ru
 
 def test_authentication_revocation_and_no_query_failure_zeros(client,db,account,volume,runtime,monkeypatch):
     job,_=completed(db,volume,runtime)
-    routes=['/api/v1/stenosis/analytics/summary',endpoint(volume,job)+'/report',endpoint(volume,job)+'/report.csv']
+    routes=['/api/v1/stenosis/analytics/summary',endpoint(volume,job)+'/report',endpoint(volume,job)+'/report.csv',endpoint(volume,job)+'/report.pdf']
     user,headers=account('Admin')
     for path in routes: assert client.get(path).status_code==401
     user.token_version+=1;db.commit()

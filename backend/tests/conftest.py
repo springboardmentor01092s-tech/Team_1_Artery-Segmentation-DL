@@ -46,6 +46,22 @@ def migrate(revision="head"):
 
 
 def clear_database():
+    if engine.dialect.name=='sqlite':
+        # Restrict cleanup to conftest's disposable in-memory fallback. SQLite
+        # cannot DROP populated self-referencing immutable histories with FKs on.
+        # Restore enforcement before migration or any test body executes.
+        if engine.url.database not in (None,'',':memory:'):
+            raise RuntimeError('SQLite cleanup requires the isolated in-memory test database')
+        with engine.connect() as connection:
+            connection.exec_driver_sql('PRAGMA foreign_keys=OFF');connection.commit()
+            try:
+                Base.metadata.drop_all(connection)
+                connection.exec_driver_sql('DROP TABLE IF EXISTS alembic_version');connection.commit()
+            finally:
+                connection.rollback();connection.exec_driver_sql('PRAGMA foreign_keys=ON');connection.commit()
+            if connection.exec_driver_sql('PRAGMA foreign_keys').scalar()!=1:
+                raise RuntimeError('SQLite foreign-key enforcement was not restored')
+        return
     Base.metadata.drop_all(engine)
     with engine.begin() as connection:
         connection.execute(text("DROP TABLE IF EXISTS alembic_version"))

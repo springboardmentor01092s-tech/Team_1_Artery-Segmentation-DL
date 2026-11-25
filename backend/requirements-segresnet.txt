@@ -1,0 +1,3 @@
+# Optional SegResNet runtime, installed separately from the legacy/default API.
+# Install requirements-model.txt with the appropriate CPU/CUDA wheel index first.
+monai==1.6.1

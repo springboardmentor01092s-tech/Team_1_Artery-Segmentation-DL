@@ -6,6 +6,206 @@ import {workflowFixture} from './case-workflow-fixtures.js';
 import {summaryFixture,indexFixture,reportFixture} from './reporting-fixtures.js';
 import {loadExperimentalFixture} from './experimental-candidates-fixtures.js';
 import {validateExperimentalPreview} from '../src/lib/experimental-candidates.js';
+import { annotationSource, newAnnotationDraft, newDraftLesion, annotationDraftBlob,
+  validateAnnotationDraft, worldToNativeIjk } from '../src/lib/annotation-draft.js';
+import {createAnnotationDraftApi,annotationBinding,validateAnnotationResponse} from '../src/api/annotation-drafts-contract.js';
+
+const draftSource = () => annotationSource(1,{case_id:1,id:'11111111-1111-4111-8111-111111111111',metadata:{source_sha256:'a'.repeat(64)}},
+  {shape:[20,30,40],affine:[[-2,0,0,10],[0,3,0,20],[0,0,4,-30],[0,0,0,1]],units:'mm'});
+const draftWithWorksheet = () => { const source=draftSource(),draft=newAnnotationDraft(source);draft.proposed_lesions.push(newDraftLesion());return {source,draft}; };
+
+function privateResponse(document=newAnnotationDraft(draftSource()),revision=1) {
+  return {id:'33333333-3333-4333-8333-333333333333',patient_id:1,case_id:1,owner_id:1,revision,
+    status:'unverified_server_draft',source_current:true,source_unavailable_reason:null,
+    geometry_identity:{version:'ct-geometry/1.0',sha256:'c'.repeat(64)},
+    segmentation_provenance:{segmentation_result_id:document.source.segmentation_result_id,checkpoint_sha256:'a'.repeat(64),
+      mask_sha256:'b'.repeat(64),probabilities_sha256:'d'.repeat(64),threshold:.5},document,
+    clinical_gate_authorized:false,training_release_authorized:false,
+    created_at:'2026-11-23T00:00:00Z',updated_at:'2026-11-23T00:00:00Z'};
+}
+const privateContext=()=>({source:draftSource(),ownerId:1,checkpointSha256:'a'.repeat(64)});
+
+test('private draft API snapshots the local document, uses known routes and sends exact revision',async()=>{
+  const doc=newAnnotationDraft(draftSource()),before=structuredClone(doc),calls=[];
+  const api=createAnnotationDraftApi({post:async(...args)=>{calls.push(args);return {status:201,data:privateResponse(args[1].document)};},
+    put:async(...args)=>{calls.push(args);return {status:200,data:privateResponse(args[1].document,2)};}});
+  const saved=await api.save(privateContext(),doc);
+  const current={id:saved.id,revision:1,binding:annotationBinding(saved)};
+  const updated=await api.save(privateContext(),doc,current);
+  assert.equal(updated.revision,2);assert.deepEqual(doc,before);
+  assert.equal(calls[0][0],'/cases/1/annotation-drafts');
+  assert.equal(calls[1][0],`/cases/1/annotation-drafts/${saved.id}`);
+  assert.equal(calls[1][1].expected_revision,1);assert.deepEqual(calls[1][1].document,before);
+});
+for(const kind of ['owner','case','hash','geometry','checkpoint','revision','release','training','document','binding']) {
+  test(`private draft response rejects mismatched ${kind} before application`,()=>{
+    const value=privateResponse(),expected={revision:1,binding:annotationBinding(value)};
+    if(kind==='owner')value.owner_id=2;if(kind==='case')value.case_id=2;
+    if(kind==='hash')value.document.source.source_sha256='b'.repeat(64);
+    if(kind==='geometry')value.geometry_identity.version='unknown';
+    if(kind==='checkpoint')value.segmentation_provenance.checkpoint_sha256='e'.repeat(64);
+    if(kind==='revision')value.revision=2;if(kind==='release')value.clinical_gate_authorized=true;
+    if(kind==='training')value.training_release_authorized=true;
+    if(kind==='document')value.document.training_release_authorized=true;
+    if(kind==='binding')value.geometry_identity.sha256='f'.repeat(64);
+    assert.throws(()=>validateAnnotationResponse(value,privateContext(),expected));
+  });
+}
+test('private draft save preserves HTTP 409 and never retries or changes the supplied revision',async()=>{
+  const error=Object.assign(new Error('Revision conflict'),{response:{status:409}}),calls=[];
+  const api=createAnnotationDraftApi({put:async(...args)=>{calls.push(args);throw error;}});
+  const current={id:privateResponse().id,revision:1,binding:annotationBinding(privateResponse())},before=structuredClone(current);
+  await assert.rejects(()=>api.save(privateContext(),newAnnotationDraft(draftSource()),current),value=>value===error);
+  assert.equal(calls.length,1);assert.deepEqual(current,before);assert.equal(calls[0][1].expected_revision,1);
+});
+test('private draft API refuses malformed documents before any network request',async()=>{
+  let calls=0;const api=createAnnotationDraftApi({post:async()=>{calls++;}}),doc=newAnnotationDraft(draftSource());
+  doc.source.affine[0]=[0,0,0,0];
+  await assert.rejects(()=>api.save(privateContext(),doc));assert.equal(calls,0);
+});
+test('private draft discovery sends current run and validates private pagination',async()=>{
+  const result=privateResponse(),row={id:result.id,case_id:1,owner_id:1,revision:1,
+    segmentation_result_id:result.document.source.segmentation_result_id,source_sha256:result.document.source.source_sha256,
+    status:result.status,updated_at:result.updated_at,clinical_gate_authorized:false,training_release_authorized:false};
+  const calls=[],page={items:[row],limit:20,offset:0,next_offset:null,offset_limit_reached:false};
+  const api=createAnnotationDraftApi({get:async(...args)=>{calls.push(args);return {status:200,data:page};}});
+  assert.deepEqual(await api.list(privateContext()),page);
+  assert.equal(calls[0][1].params.segmentation_result_id,row.segmentation_result_id);
+  page.items[0].owner_id=2;await assert.rejects(()=>api.list(privateContext()));
+  await assert.rejects(()=>api.list(privateContext(),1_000_001));
+});
+
+test('annotation draft starts without findings or invented measurements',async()=>{
+  const source=draftSource(),blank=newAnnotationDraft(source);
+  assert.deepEqual(blank.proposed_lesions,[]);assert.equal(blank.training_eligible,false);
+  const {draft}=draftWithWorksheet(),body=JSON.parse(await annotationDraftBlob(draft,source).text());
+  assert.equal(body.proposed_lesions[0].minimum_lumen_diameter_mm,null);
+  assert.equal(body.proposed_lesions[0].percentage_narrowing,null);assert.equal(body.proposed_lesions[0].severity_category,null);
+});
+test('draft crosshair capture uses native coordinates with independent flipped-axis expected values',()=>{
+  assert.deepEqual(worldToNativeIjk([0,38,-2],draftSource()),[5,6,7]);
+});
+test('draft crosshair capture respects permuted anisotropic axes',()=>{
+  const source=draftSource();source.affine=[[0,0,-4,10],[-2,0,0,20],[0,3,0,-30],[0,0,0,1]];
+  assert.deepEqual(worldToNativeIjk([-18,10,-12],source),[5,6,7]);
+});
+test('draft point capture refuses out-of-grid and nonfinite locations',()=>{
+  assert.throws(()=>worldToNativeIjk([1000,0,0],draftSource()),/outside/);
+  assert.throws(()=>worldToNativeIjk([NaN,0,0],draftSource()),/Invalid/);
+});
+test('draft point capture refuses singular transforms',()=>{
+  const source=draftSource();source.affine[0]=[0,0,0,10];assert.throws(()=>worldToNativeIjk([10,20,-30],source));
+});
+test('draft source refuses cross-case parent records and missing units',()=>{
+  assert.throws(()=>annotationSource(2,{case_id:1,id:'11111111-1111-4111-8111-111111111111',metadata:{source_sha256:'a'.repeat(64)}},{...draftSource(),units:'mm'}));
+  assert.throws(()=>newAnnotationDraft({...draftSource(),units:'unknown'}));assert.throws(()=>newAnnotationDraft({}));
+});
+for (const flag of ['clinical_validation','training_eligible','quantitative_gate_authorized','reader_independence_verified',
+  'clinical_gate_authorized','training_release_authorized']) test(`draft refuses forged ${flag}`,()=>{
+  const {source,draft}=draftWithWorksheet();draft[flag]=true;assert.throws(()=>annotationDraftBlob(draft,source));
+});
+
+const invalidDraftSources = {
+  singular: source=>{source.affine[0]=[0,0,0,0];},
+  near_singular: source=>{source.affine=[[1,1,0,0],[0,1e-10,0,0],[0,0,1,0],[0,0,0,1]];},
+  nonfinite: source=>{source.affine[0][0]=Infinity;},
+  nonhomogeneous: source=>{source.affine[3][0]=1;},
+  missing_row: source=>{source.affine.pop();},
+  sparse_row: source=>{delete source.affine[1][0];},
+  sparse_shape: source=>{delete source.shape[0];},
+  zero_dimension: source=>{source.shape[0]=0;},
+  fractional_dimension: source=>{source.shape[0]=1.5;},
+  unsafe_voxel_count: source=>{source.shape=[Number.MAX_SAFE_INTEGER,2,2];},
+  unknown_units: source=>{source.units='unknown';},
+  nonstring_hash: source=>{source.source_sha256=[source.source_sha256];},
+};
+for (const [kind,change] of Object.entries(invalidDraftSources)) for (const operation of ['capture','restore','export']) {
+  test(`shared annotation geometry validation rejects ${kind} during ${operation}`,()=>{
+    const {source,draft}=draftWithWorksheet();change(source);draft.source=structuredClone(source);
+    if(operation==='capture')assert.throws(()=>worldToNativeIjk([0,38,-2],source),/Invalid/);
+    if(operation==='restore')assert.throws(()=>validateAnnotationDraft(draft,source),/Invalid/);
+    if(operation==='export')assert.throws(()=>annotationDraftBlob(draft,source),/Invalid/);
+  });
+}
+for (const kind of ['shape','affine','units','hash','run','case']) for (const operation of ['capture','restore','export']) {
+  test(`annotation ${operation} rejects a source with mismatched ${kind}`,()=>{
+    const {source,draft}=draftWithWorksheet(),other=structuredClone(source);
+    if(kind==='shape')other.shape[0]++;
+    if(kind==='affine')other.affine[0][3]++;
+    if(kind==='units')other.units='m';
+    if(kind==='hash')other.source_sha256='b'.repeat(64);
+    if(kind==='run')other.segmentation_result_id='22222222-2222-4222-8222-222222222222';
+    if(kind==='case')other.case_id=2;
+    draft.source=other;
+    if(operation==='capture')assert.throws(()=>worldToNativeIjk([0,38,-2],other,source),/Invalid/);
+    if(operation==='restore')assert.throws(()=>validateAnnotationDraft(draft,source),/Invalid/);
+    if(operation==='export')assert.throws(()=>annotationDraftBlob(draft,source),/Invalid/);
+  });
+}
+test('new and round-tripped local drafts never authorize clinical or training release',async()=>{
+  const {source,draft}=draftWithWorksheet(),before=structuredClone(draft);
+  for(const value of [draft,JSON.parse(await annotationDraftBlob(draft,source).text())]) {
+    assert.equal(value.clinical_gate_authorized,false);assert.equal(value.training_release_authorized,false);
+    validateAnnotationDraft(value,source);
+  }
+  assert.deepEqual(draft,before);
+  delete draft.training_release_authorized;
+  assert.throws(()=>validateAnnotationDraft(draft,source));
+});
+test('invalid geometry never allocates an export Blob',()=>{
+  const {source,draft}=draftWithWorksheet(),NativeBlob=globalThis.Blob;
+  let allocated=0;
+  globalThis.Blob=class extends NativeBlob { constructor(...args){allocated++;super(...args);} };
+  try {
+    draft.source.affine[0]=[0,0,0,0];
+    assert.throws(()=>annotationDraftBlob(draft,source),/Invalid/);
+    assert.equal(allocated,0);
+  } finally { globalThis.Blob=NativeBlob; }
+});
+for (const kind of ['case','hash','parent','shape','affine']) test(`draft restore rejects mismatched ${kind}`,()=>{
+  const {source,draft}=draftWithWorksheet();
+  if(kind==='case')draft.source.case_id=2;if(kind==='hash')draft.source.source_sha256='b'.repeat(64);
+  if(kind==='parent')draft.source.segmentation_result_id='22222222-2222-4222-8222-222222222222';
+  if(kind==='shape')draft.source.shape[0]++;if(kind==='affine')draft.source.affine[0][3]++;
+  assert.throws(()=>validateAnnotationDraft(draft,source));
+});
+for (const kind of ['unknown','negative','nan','infinity','reference_zero','range','outside','duplicates','percentage_basis','reference_reason']) test(`draft refuses malformed worksheet ${kind}`,()=>{
+  const {source,draft}=draftWithWorksheet(),row=draft.proposed_lesions[0];
+  if(kind==='unknown')row.validated=true;if(kind==='negative')row.minimum_lumen_diameter_mm=-1;
+  if(kind==='nan')row.minimum_lumen_diameter_mm=NaN;if(kind==='infinity')row.minimum_lumen_diameter_mm=Infinity;
+  if(kind==='reference_zero')row.adjacent_reference_diameter_mm=0;if(kind==='range')row.percentage_narrowing=101;
+  if(kind==='outside')row.center_ijk=[20,0,0];if(kind==='duplicates')draft.proposed_lesions.push(structuredClone(row));
+  if(kind==='percentage_basis')row.percentage_narrowing=0;if(kind==='reference_reason')row.adjacent_reference_diameter_mm=1;
+  assert.throws(()=>annotationDraftBlob(draft,source));
+});
+test('manual zero and unavailable values remain distinct in an unverified draft',async()=>{
+  const {source,draft}=draftWithWorksheet(),row=draft.proposed_lesions[0];
+  row.minimum_lumen_diameter_mm=0;row.percentage_narrowing=0;row.percentage_basis='Software guard test only; not a clinical label';
+  const value=JSON.parse(await annotationDraftBlob(draft,source).text());assert.equal(value.proposed_lesions[0].minimum_lumen_diameter_mm,0);
+  assert.equal(value.proposed_lesions[0].adjacent_reference_diameter_mm,null);assert.equal(value.clinical_validation,false);
+});
+test('dedicated draft export checks toJSON snapshot and does not mutate input',async()=>{
+  const {source,draft}=draftWithWorksheet(),before=structuredClone(draft);
+  await annotationDraftBlob(draft,source).text();assert.deepEqual(draft,before);
+  Object.defineProperty(draft,'toJSON',{value:()=>({...before,clinical_validation:true})});
+  assert.throws(()=>annotationDraftBlob(draft,source));
+});
+test('both ordinary JSON report boundaries reject draft wrappers and extracted worksheets',()=>{
+  const {draft}=draftWithWorksheet();
+  for (const value of [draft,draft.proposed_lesions[0],{nested:{draft}}]) {
+    assert.throws(()=>reportJsonBlob({result:value}),/annotation drafts/);
+    assert.throws(()=>downloadRecords([{id:1,notes:value}],'json'),/annotation drafts/);
+  }
+});
+
+test('CT-only private review notes are excluded by both normal JSON export paths',()=>{
+  const note={schema_version:'ct-review-note/0.1',notes:'Unverified synthetic preparation',
+    clinical_gate_authorized:false,training_release_authorized:false};
+  for(const value of [note,{nested:[note]}]) {
+    assert.throws(()=>reportJsonBlob({result:value}),/annotation drafts/);
+    assert.throws(()=>downloadRecords([{id:1,notes:value}],'json'),/annotation drafts/);
+  }
+});
 
 for (const field of ['reference_diameter','minimum_lumen_diameter','percentage_narrowing']) test(`report rejects unvalidated numeric ${field} before print or JSON presentation`, async () => {
   const report = await reportFixture();
@@ -26,6 +226,11 @@ for(const state of ['completed','failed','queued','running','stale','integrity_e
   const report=await reportFixture({state});assert.equal(await validateReport(report,1,report.analysis.analysis_id),report);if(state!=='completed')assert.equal(report.result,null);
 });
 test('zero-finding completed report remains a genuine typed result',async()=>{const report=await reportFixture({count:0});await validateReport(report,1,report.analysis.analysis_id);assert.equal(report.result.result.lesions.length,0);});
+test('report API contract preserves the version 1.0 numeric patient identifier',async()=>{
+  const report=await reportFixture();
+  assert.equal(await validateReport(report,1,report.analysis.analysis_id),report);
+  assert.equal(report.case.patient_id,1);
+});
 test('cross-case and fabricated completed reports fail closed',async()=>{
   const report=await reportFixture();await assert.rejects(validateReport(report,2,report.analysis.analysis_id));report.result=null;await assert.rejects(validateReport(report,1,report.analysis.analysis_id));
 });
@@ -38,6 +243,13 @@ test('HTTP errors stay errors and Blob error bodies never download as CSV',async
   const api=createStenosisReportingApi({get:async()=>{throw failure;}});
   await assert.rejects(api.reportCsv(1,report.analysis.analysis_id),{code:'source_changed',message:'Source changed'});
   await assert.rejects(createStenosisReportingApi({get:async()=>({status:200,data:new Blob(['<html>'],{type:'text/html'})})}).reportCsv(1,report.analysis.analysis_id),/CSV findings/);
+});
+test('structured PDF export uses the report endpoint and validates PDF bytes',async()=>{
+  const calls=[],report=await reportFixture(),pdf=new Blob(['%PDF-1.4\nsynthetic PDF fixture'],{type:'application/pdf'});
+  const api=createStenosisReportingApi({get:async(...args)=>{calls.push(args);return{status:200,data:pdf,headers:{'content-type':'application/pdf'}};}});
+  assert.equal(await api.reportPdf(1,report.analysis.analysis_id),pdf);
+  assert.deepEqual(calls,[[`/cases/1/stenosis/analyses/${report.analysis.analysis_id}/report.pdf`,{signal:undefined,responseType:'blob'}]]);
+  await assert.rejects(createStenosisReportingApi({get:async()=>({status:200,data:new Blob(['<html>'],{type:'application/pdf'}),headers:{'content-type':'application/pdf'}})}).reportPdf(1,report.analysis.analysis_id),/PDF research report/);
 });
 test('versioned JSON export allowlists top-level report fields',async()=>{
   const report=await reportFixture();report.worker_token='must not export';const body=JSON.parse(await reportJsonBlob(report).text());assert.equal(body.schema_version,'1.0');assert.equal(body.worker_token,undefined);assert.equal(body.result.result.lesions.length,3);
@@ -118,6 +330,12 @@ test('JSON export preserves null measurements, reasons and the original report',
   assert.deepEqual(body,before);
   assert.deepEqual(report,before);
   assert.equal(body.result.result.lesions[0].measurements.percentage_narrowing.value,null);
+});
+
+test('stenosis report JSON preserves its version 1.0 numeric patient identifier',async()=>{
+  const report=await reportFixture();report.case.patient_id=42;
+  const body=JSON.parse(await reportJsonBlob(report).text());
+  assert.deepEqual(body.case,{case_id:1,case_reference:'SYNTHETIC-CASE',patient_id:42});
 });
 
 test('unavailable reports with no result remain exportable',async()=>{
@@ -262,4 +480,25 @@ test('ordinary JSON still preserves unrelated experimental wording and genuine e
   report.result={schema_version:'ordinary-metadata/1.0',kind:'experimental_candidate_note',percentage:0,
     metrics:{dice:0,iou:0,precision:0,recall:0},notes:['experimental candidate previews are unavailable']};
   assert.deepEqual(JSON.parse(await reportJsonBlob(report).text()),report);
+});
+
+for(const version of ['review-adjudication/0.1','review-adjudication-version/0.1',null])test(`ordinary JSON rejects unverified adjudication ${version||'without tag'} through both public exports`,async t=>{
+  const record={r1_submission_sha256:'a'.repeat(64),r2_submission_sha256:'b'.repeat(64),correspondences:[],resolutions:[],
+    ...(version?{schema_version:version}:{}),clinical_gate_authorized:false,training_release_authorized:false};
+  const report=await reportFixture();report.result={review:record};const before=structuredClone(report);let blobs=0;
+  t.mock.method(globalThis,'Blob',function ForbiddenBlob(){blobs++;throw new Error('No Blob before validation');});
+  assert.throws(()=>reportJsonBlob(report),/Unverified/);
+  assert.throws(()=>downloadRecords([{id:1,caseCode:'SYNTHETIC-ONLY',notes:record}],'json'),/Unverified/);
+  assert.equal(blobs,0);assert.deepEqual(report,before);
+});
+
+test('abstained automatic branch research evidence cannot enter either ordinary JSON path',async t=>{
+  // Contract sentinel only: no centerline experiment or medical data is created.
+  const research={schema_version:'experimental-automatic-candidates/0.1',status:'abstained',preview:null,
+    measurement_status:'measurement_unavailable_no_validated_gate',graph:{status:'abstained'}};
+  const report=await reportFixture();report.result={research};let blobs=0;
+  t.mock.method(globalThis,'Blob',function ForbiddenBlob(){blobs++;throw new Error('No Blob before validation');});
+  assert.throws(()=>reportJsonBlob(report),/Experimental candidate previews/);
+  assert.throws(()=>downloadRecords([{id:1,caseCode:'SYNTHETIC-ONLY',notes:{research}}],'json'),/Experimental candidate previews/);
+  assert.equal(blobs,0);
 });

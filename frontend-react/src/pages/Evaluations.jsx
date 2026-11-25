@@ -5,7 +5,10 @@ import AppShell from '../components/AppShell';
 import { PageHeader, Panel, Loading, ErrorState, EmptyState, Metadata } from '../components/ui';
 import { useRemote } from '../hooks/useRemote';
 import { evaluationsApi } from '../api/evaluations';
-import { METRICS } from '../api/evaluations-contract';
+import { METRICS, SUPPLEMENTAL_METRICS } from '../api/evaluations-contract';
+import { evaluationJsonBlob, evaluationCsvBlob } from '../lib/exports';
+import { saveArtifact } from '../lib/segmentation';
+import EvaluationImport from '../components/EvaluationImport';
 
 const score = (value) => value == null ? 'Unavailable' : value.toFixed(6);
 const label = (row) => `${row.metadata.model.display_name} · ${row.checkpoint_sha256.slice(0, 12)} · ${row.id.slice(0, 8)}`;
@@ -16,6 +19,26 @@ function MetricTable({ rows }) {
     <thead><tr><th scope="col">Record</th>{METRICS.map((m) => <th scope="col" key={m}>{m}</th>)}</tr></thead>
     <tbody>{rows.map(([name, values, identity]) => <tr key={identity ?? name}><th scope="row">{name}</th>{METRICS.map((m) => <td key={m}>{score(values?.[m])}</td>)}</tr>)}</tbody>
   </table></div>;
+}
+
+function SupplementalMetrics({ value }) {
+  return <Panel title="Additional segmentation metrics" description="Derived from recorded confusion counts; no inference or threshold changes.">
+    {!value ? <p>This API does not provide supplemental count-derived metrics. No values are estimated.</p> : <>
+      <div className="table-wrapper"><table className="data-table">
+        <caption>Count-derived segmentation statistics (0–1)</caption>
+        <thead><tr><th scope="col">Aggregation</th>{SUPPLEMENTAL_METRICS.map(name => <th scope="col" key={name}>{name.replaceAll('_', ' ')}</th>)}</tr></thead>
+        <tbody>{[['Macro-average (additional metrics)', value.macro_metrics], ['Pooled micro-average (additional metrics, separate)', value.pooled_micro_metrics]]
+          .map(([name, metrics]) => <tr key={name}><th scope="row">{name}</th>{SUPPLEMENTAL_METRICS.map(key => <td key={key}>{score(metrics[key])}</td>)}</tr>)}</tbody>
+      </table></div>
+      <p>Sensitivity equals recall and binary F1 equals Dice where counts are available. Coverage may differ from imported metrics when counts are missing. Background-dominated voxel accuracy and specificity must be read alongside Dice and recall.</p>
+      <Metadata items={[
+        ['Statistics version', value.version], ['Source', value.source], ['Formulas', value.formulas],
+        ...SUPPLEMENTAL_METRICS.map(name => [`${name} denominator`, value.macro_denominators[name]]),
+        ['Pooled unavailable reasons', value.pooled_unavailable_reasons],
+      ]} />
+      <p>Hausdorff distance / average surface distance: unavailable. {value.surface_distances.reason}</p>
+    </>}
+  </Panel>;
 }
 
 function Provenance({ row }) {
@@ -73,6 +96,7 @@ function SectionStatus({ evaluationId, caseId }) {
 
 function EvaluationDetail({ id }) {
   const [sectionCase, setSectionCase] = useState(null);
+  const [exportError, setExportError] = useState('');
   const loader = useCallback(async () => {
     const [summary, cases] = await Promise.all([evaluationsApi.summary(id), evaluationsApi.cases(id)]);
     if ([...summary.case_ids].sort((a,b) => a-b).join(',') !== cases.cases.map((r) => r.case_id).sort((a,b) => a-b).join(',')) {
@@ -84,9 +108,24 @@ function EvaluationDetail({ id }) {
   if (remote.loading) return <Loading />;
   if (remote.error) return <ErrorState error={remote.error} retry={remote.reload} />;
   const { summary, cases } = remote.data;
+  function download(format) {
+    try {
+      const blob = format === 'json' ? evaluationJsonBlob(summary, cases) : evaluationCsvBlob(summary, cases);
+      saveArtifact({ blob, filename: `vascuai-evaluation-${summary.id}.${format}` });
+      setExportError('');
+    } catch (error) { setExportError(error.message || 'Evaluation export failed. No file was saved.'); }
+  }
   return <>
     <Panel title="Segmentation evaluation" action={<button className="btn btn-ghost" onClick={remote.reload}><RefreshCw size={14} /> Refresh evaluation</button>}>
       <p>Headline: unweighted macro-average across cases, with undefined metrics omitted per metric. {summary.included_case_count} of {summary.case_count} cases included.</p>
+      <p className="evaluation-limitations">Research segmentation evidence only. No clinical validation or quantitative stenosis capability is established.</p>
+      <div className="page-actions no-print">
+        <button className="btn btn-ghost" onClick={() => download('csv')}>Download evaluation CSV</button>
+        <button className="btn btn-ghost" onClick={() => download('json')}>Download evaluation JSON</button>
+        <button className="btn btn-ghost" onClick={() => window.print()}>Print / Save evaluation PDF</button>
+      </div>
+      <p>PDF uses browser printing of this view. JSON retains the complete per-case provenance and null values.</p>
+      {exportError && <p className="notice error" role="alert">{exportError}</p>}
       <MetricTable rows={[
         ['Macro-average (headline)', summary.macro_metrics],
         ...(summary.pooled_micro_metrics ? [['Pooled micro-average (separate)', summary.pooled_micro_metrics]] : []),
@@ -95,6 +134,7 @@ function EvaluationDetail({ id }) {
       <Metadata items={METRICS.map((m) => [`${m} macro denominator`, summary.macro_denominators[m]])} />
       <Provenance row={summary} />
     </Panel>
+    <SupplementalMetrics value={summary.supplemental_metrics} />
     <Panel title="Case-wise segmentation results" description="Dataset IDs and application case IDs are distinct. Excluded cases remain visible.">
       <MetricTable rows={cases.cases.map((row) => [`Case ${row.case_id} · dataset ${row.dataset_case_id}`, row.metrics])} />
       <Metadata items={[
@@ -106,6 +146,8 @@ function EvaluationDetail({ id }) {
         <Metadata items={[
           ['Reference SHA-256', row.reference_sha256], ['Prediction SHA-256', row.prediction_sha256],
           ['Exclusion reason', row.exclusion_reason], ['Confusion counts', row.confusion_counts], ['Mask provenance', row.mask_provenance],
+          ['Count-derived additional metrics', cases.supplemental_metrics?.per_case.find(item => item.case_id === row.case_id)?.metrics],
+          ['Additional metric unavailable reasons', cases.supplemental_metrics?.per_case.find(item => item.case_id === row.case_id)?.unavailable_reasons],
         ]} />
         <button className="btn btn-ghost" onClick={() => setSectionCase(row.case_id)}>View stenosis availability for case {row.case_id}</button>
       </details>)}
@@ -130,7 +172,7 @@ function ComparisonResult({ ids }) {
       ['Reference artifacts match', result.reference_artifacts_match], ['Exclusions match', result.exclusions_match],
     ]} />
     {(!result.metric_definitions_match || !result.reference_artifacts_match || !result.exclusions_match)
-      && <p className="notice">Protocols differ. These scores do not establish a fair model-selection comparison.</p>}
+      && <p>Protocols differ. These scores do not establish a fair model-selection comparison.</p>}
     {result.evaluations.map((row) => <details key={row.id}><summary>{label(row)} provenance and denominators</summary>
       <Provenance row={row} /><Metadata items={[
         ['Included cases', row.included_case_count], ['Macro denominators', row.macro_denominators],
@@ -153,6 +195,7 @@ export default function Evaluations({ comparison = false, initialTab }) {
       <Link className="btn btn-ghost" to={comparison ? '/evaluation' : '/models/compare'}>{comparison ? 'Evaluation workspace' : 'Model comparison'}</Link>
     </PageHeader>
     <p className="notice">Research prototype. No clinical validation or quantitative stenosis capability is established. Imported records do not certify a model.</p>
+    {!comparison && <EvaluationImport onImported={() => { setOffset(0); setSelected(''); remote.reload(); }} />}
     {initialTab === 'Stenosis' && <p className="notice">Stenosis evaluation measurements remain unavailable without a validated provider and gate. Segmentation scores below are a separate task.</p>}
     <Panel title="Accessible imported evaluations" action={<button className="btn btn-ghost" onClick={() => {
       setSelected(''); setCompareIds([]); setRequested(null); remote.reload();

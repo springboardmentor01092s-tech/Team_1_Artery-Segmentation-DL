@@ -48,6 +48,20 @@ def test_postgres_driver_and_sqlite_configuration():
     config = Settings(_env_file=None, SECRET_KEY=settings.SECRET_KEY, DATABASE_URL="postgresql://user@localhost/db")
     assert config.DATABASE_URL.startswith("postgresql+psycopg://")
     assert engine.dialect.name in {"sqlite", "postgresql"}
+
+
+def test_model_recipe_dispatch_is_explicit_and_does_not_reinterpret_legacy_threshold():
+    base = {"SECRET_KEY": settings.SECRET_KEY, "DATABASE_URL": "sqlite://", "TESTING": True, "_env_file": None}
+    legacy = Settings(**base)
+    assert legacy.VASCULAI_MODEL_ARCHITECTURE == "smallunet3d" and legacy.VASCULAI_MODEL_THRESHOLD == .7
+    new = Settings(**base, VASCULAI_MODEL_ARCHITECTURE="segresnet-1mm-v1")
+    assert new.VASCULAI_MODEL_ARCHITECTURE == "segresnet-1mm-v1"
+    for wrong in ["auto", "SegResNet", "unknown"]:
+        with pytest.raises(ValidationError):
+            Settings(**base, VASCULAI_MODEL_ARCHITECTURE=wrong)
+    with pytest.raises(ValidationError, match="requires threshold 0.5"):
+        Settings(**base, VASCULAI_MODEL_ARCHITECTURE="segresnet-1mm-v1", VASCULAI_MODEL_THRESHOLD=.7)
+    assert Settings(**base, VASCULAI_MODEL_ARCHITECTURE="segresnet-1mm-v1", VASCULAI_MODEL_THRESHOLD=.5).VASCULAI_MODEL_THRESHOLD == .5
     if engine.dialect.name == "sqlite":
         with engine.connect() as connection:
             assert connection.scalar(text("PRAGMA foreign_keys")) == 1

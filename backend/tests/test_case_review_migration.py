@@ -18,7 +18,7 @@ def test_additive_review_migration_preserves_populated_cases_runs_and_files(clie
             return {t:c.execute(text(f"SELECT * FROM {t} ORDER BY id")).all()
                     for t in ["users", "patients", "cases", "volume_metadata", "segmentation_results", "audit_events"]}
     before = snapshot()
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, "0010_case_reviews")
     assert snapshot() == before
     schema = inspect(engine)
     assert "case_reviews" in schema.get_table_names()

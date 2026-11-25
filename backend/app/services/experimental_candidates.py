@@ -45,15 +45,20 @@ class ResearchParameters:
     junction_exclusion_mm: float
 
     def validate(self):
-        numbers = asdict(self)
-        if any(isinstance(x, bool) or not np.isfinite(x) or x <= 0 for x in numbers.values()):
+        # Validate scalar types before asdict() could deepcopy an invalid array.
+        numbers = vars(self)
+        if any(isinstance(x, (bool,np.bool_)) or not isinstance(x,(int,float,np.integer,np.floating)) or not np.isfinite(x) or x <= 0 for x in numbers.values()):
             raise CandidateInputError("invalid_research_parameters")
         if not (0 < self.area_ratio_trigger < 1 and self.reference_inner_mm < self.reference_outer_mm):
             raise CandidateInputError("invalid_reference_or_sensitivity")
         for value in (self.minimum_reference_samples_each_side, self.minimum_candidate_sections):
             if not isinstance(value, int) or value < 2:
                 raise CandidateInputError("invalid_minimum_sample_count")
-        n = int(np.ceil(self.plane_radius_mm / self.plane_pitch_mm))
+        ratio=self.plane_radius_mm/self.plane_pitch_mm
+        pixel_area=self.plane_pitch_mm*self.plane_pitch_mm
+        if not np.isfinite(ratio) or ratio>128 or not np.isfinite(pixel_area) or pixel_area<=0:
+            raise CandidateInputError('plane_resource_limit')
+        n = int(np.ceil(ratio))
         if n < 1 or 2 * n + 1 > 257:
             raise CandidateInputError("plane_resource_limit")
         return n
@@ -171,6 +176,18 @@ def extract_candidates(mask, geometry, spacing, source, branches, parameters):
     """
     if not isinstance(parameters, ResearchParameters): raise CandidateInputError("explicit_research_parameters_required")
     n = parameters.validate()
+    _validate_source(source)
+    mask = _categorical(mask, source["target_label"])
+    g, affine, inverse = _geometry(mask, geometry, spacing)
+    if mask_identity(mask, source["target_label"]) != source["mask_sha256"] or geometry_fingerprint(g, source["source_sha256"]) != source["geometry_fingerprint"]:
+        raise CandidateInputError("source_identity_mismatch")
+    lumen = mask == source["target_label"]
+    components, count = label(lumen)
+    del components
+    return _sample_profile(lumen, g, affine, inverse, source, branches, parameters, n, count)
+
+
+def _validate_source(source):
     if not isinstance(source, dict) or set(source) != {"source_sha256", "mask_sha256", "geometry_fingerprint", "mask_role", "parent_segmentation_result_id", "target_label"}:
         raise CandidateInputError("explicit_source_binding_required")
     for key in ("source_sha256", "mask_sha256", "geometry_fingerprint"):
@@ -184,12 +201,14 @@ def extract_candidates(mask, geometry, spacing, source, branches, parameters):
         except ValueError:
             raise CandidateInputError("prediction_parent_required") from None
     if source["mask_role"] != "model_prediction" and parent is not None: raise CandidateInputError("annotation_is_not_a_prediction")
-    mask = _categorical(mask, source["target_label"])
-    g, affine, inverse = _geometry(mask, geometry, spacing)
-    if mask_identity(mask, source["target_label"]) != source["mask_sha256"] or geometry_fingerprint(g, source["source_sha256"]) != source["geometry_fingerprint"]:
-        raise CandidateInputError("source_identity_mismatch")
+
+
+def _sample_profile(lumen, g, affine, inverse, source, branches, parameters, n, count):
+    """Shared plane/reference operator; storage and connectivity are validated first."""
     if not isinstance(branches, list) or not 1 <= len(branches) <= MAX_BRANCHES:
         raise CandidateInputError("branch_count_limit")
+    if any(not isinstance(b,dict) or not isinstance(b.get('branch_id'),str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}',b['branch_id']) for b in branches):
+        raise CandidateInputError('invalid_branch_identity_or_order')
     if len({b.get("branch_id") for b in branches if isinstance(b, dict)}) != len(branches): raise CandidateInputError("duplicate_branch_identity")
     result = {"schema_version": "experimental-candidates/1.0", "algorithm": {"id": METHOD, "version": VERSION},
               "notice": NOTICE, "measurement_status": "measurement_unavailable_no_validated_gate",
@@ -197,9 +216,6 @@ def extract_candidates(mask, geometry, spacing, source, branches, parameters):
               "parameters": asdict(parameters), "parameter_status": "unvalidated_research_parameters",
               "parameters_sha256": _digest(asdict(parameters)), "branch_geometry_sha256": _digest(branches),
               "candidates": [], "branches": [], "status": "abstained", "reason": None}
-    lumen = mask == source["target_label"]
-    components, count = label(lumen)
-    del components
     if count != 1:
         result["reason"] = "empty_mask" if count == 0 else "disconnected_source_mask"
         return result

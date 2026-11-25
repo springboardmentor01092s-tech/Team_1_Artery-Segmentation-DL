@@ -55,6 +55,19 @@ export function createStenosisReportingApi(api) {
     async analytics(filters={}, {signal}={}) {try{const response=await api.get(filters.case_id?`/cases/${filters.case_id}/stenosis/analytics`:'/stenosis/analytics/summary',{params:filters,signal});if(response.status!==200)fail();return validateSummary(response.data);}catch(error){throw decode(error);}},
     async analysisIndex(filters={}, {signal,limit=10,offset=0}={}) {try{const response=await api.get('/stenosis/analytics/analyses',{params:{...filters,limit,offset},signal});if(response.status!==200)fail();return validateIndex(response.data);}catch(error){throw decode(error);}},
     async report(caseId,analysisId,{signal}={}) {try{const response=await api.get(reportPath(caseId,analysisId),{signal});if(response.status!==200)fail();return await validateReport(response.data,caseId,analysisId);}catch(error){throw decode(error);}},
+    async reportPdf(caseId,analysisId,{signal}={}) {
+      try {
+        const response=await api.get(reportPath(caseId,analysisId)+'.pdf',{signal,responseType:'blob'});
+        const data=response.data;
+        if(response.status!==200||!(data instanceof Blob)||data.size<8
+          ||!/^application\/pdf\b/i.test(response.headers?.['content-type']||data.type)
+          ||await data.slice(0,5).text()!=='%PDF-') throw new Error('The server did not return a PDF research report.');
+        return data;
+      } catch(error) {
+        if(error.response?.data instanceof Blob){try{error.response.data=JSON.parse(await error.response.data.text());}catch{/* preserve the HTTP failure */}}
+        throw decode(error);
+      }
+    },
     async reportCsv(caseId,analysisId,{signal}={}) {
       try{const response=await api.get(reportPath(caseId,analysisId)+'.csv',{signal,responseType:'blob'});
         if(response.status!==200||!(response.data instanceof Blob)||!response.data.size||!/^text\/csv\b/i.test(response.headers?.['content-type']||response.data.type))throw new Error('The server did not return a CSV findings report.');

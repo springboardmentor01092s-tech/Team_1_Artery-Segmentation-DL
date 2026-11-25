@@ -86,6 +86,7 @@ All paths have `/api/v1` prefix:
 | `/cases/{case_id}/stenosis/analytics` | Same summary, bound to requested case; incompatible query case/patient gives 404 |
 | `/patients/{patient_id}/stenosis/analytics` | Existing clinical writers only; patient-scoped summary |
 | `/cases/{case_id}/stenosis/analyses/{analysis_id}/report` | Typed `StenosisReport` JSON snapshot |
+| `/cases/{case_id}/stenosis/analyses/{analysis_id}/report.pdf` | Protected PDF snapshot with the same case/subject identity and research limitations |
 | `/cases/{case_id}/stenosis/analyses/{analysis_id}/report.csv` | Protected CSV findings export for current completed reports only |
 
 Summary/trend/index filters: `start_date`, `end_date`, `case_id`, `patient_id`,
@@ -131,12 +132,15 @@ filtered history says no matches, not that the case was never analyzed.
 
 ## Reports and export semantics
 
-`StenosisReport` schema 1.0 includes generation time, opaque case/subject identity,
+`StenosisReport` schema 1.0 includes generation time, case identity and the numeric
+opaque subject `patient_id` used by existing case-reader contracts,
 typed job/provenance, explicit report state, optional validated result/lesions,
 explanation metadata and research limitations. The response distinguishes queued,
 running, failed, stale, integrity error and completed results. Incomplete/stale/
 inconsistent reports contain no findings. A current completed zero-lesion report
 has a real empty result; it is not an unexecuted or unavailable analysis.
+JSON, PDF and CSV outputs retain the report's case identity, including `patient_id`;
+they do not include patient names, notes or directory codes.
 
 The case reporting landing page handles no selected/performed analysis and current
 execution unavailability without generating a findings document. Completed reports

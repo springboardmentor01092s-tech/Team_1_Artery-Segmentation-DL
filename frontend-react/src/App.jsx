@@ -52,6 +52,9 @@ const Security = lazy(() =>
 );
 const Help = lazy(() => import("./pages/Help"));
 const ReferenceProfiles = lazy(() => import("./pages/ReferenceProfiles"));
+const ExperimentalStenosis = lazy(() => import("./pages/ExperimentalStenosis"));
+const ReviewAssignments = lazy(() => import("./pages/ReviewAssignments"));
+const ReviewAdjudications = lazy(() => import("./pages/ReviewAdjudications"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AuditLogs = lazy(() =>
   import("./pages/admin/Operations").then((m) => ({ default: m.AuditLogs })),
@@ -84,6 +87,8 @@ function ErrorPage({ denied = false }) {
 export default function App() {
   const protectedPages = [
     ["/dashboard", () => <Dashboard />],
+    ["/review-assignments", () => <ReviewAssignments />, writers],
+    ["/review-adjudications", () => <ReviewAdjudications />, writers],
     ["/cases", () => <Cases />],
     ["/cases/new", () => <NewCase />, writers],
     ["/cases/:id", () => <CaseDetail />],
@@ -108,6 +113,7 @@ export default function App() {
     ["/models/compare", () => <ModelComparison />, researchers],
     ["/evaluation", () => <Evaluation />, researchers],
     ["/research/reference-profiles", () => <ReferenceProfiles />, researchers],
+    ["/research/experimental-stenosis", () => <ExperimentalStenosis />, researchers],
     [
       "/evaluation/segmentation",
       () => <Evaluation initialTab="Segmentation" />,

@@ -14,6 +14,7 @@ from pydantic import ValidationError
 import pytest
 
 from app.core.roles import Role
+from app.core.review_access import enforce_review_access
 from app.core.security import create_access_token
 from app.database.session import get_db
 from app.main import app
@@ -76,6 +77,9 @@ def safe_client():
     session = AuthSession()
     previous = app.dependency_overrides.copy()
     app.dependency_overrides[get_db] = lambda: session
+    # This database-free contract double isolates the original auth dependency.
+    # The DB-backed review guard has separate real-PostgreSQL route tests.
+    app.dependency_overrides[enforce_review_access] = lambda: None
     try:
         with TestClient(app) as client:
             yield client, session

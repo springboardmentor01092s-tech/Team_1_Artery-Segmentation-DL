@@ -1,11 +1,17 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
 import { installApi } from './fixtures';
-import { evaluationFixture, indexFixture, runsFixture, sectionsFixture } from '../evaluation-fixtures';
+import { evaluationFixture, indexFixture, runsFixture, sectionsFixture, supplementalFixture } from '../evaluation-fixtures';
 
-async function installEvaluations(page, { conflict = false } = {}) {
-  const { requests } = await installApi(page);
+async function installEvaluations(page, { conflict = false, role = 'Admin', additional = false } = {}) {
+  const { requests } = await installApi(page, { role });
   const one = evaluationFixture(1), two = evaluationFixture(2);
+  if (additional) for (const record of [one, two]) {
+    record.summary.supplemental_metrics = supplementalFixture();
+    record.cases.supplemental_metrics = supplementalFixture();
+  }
   await page.route('**/api/v1/evaluations**', (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname;
@@ -19,6 +25,97 @@ async function installEvaluations(page, { conflict = false } = {}) {
   await page.route('**/api/v1/stenosis/evaluations/**/cases/*/sections', (route) => route.fulfill({ json: sectionsFixture(one.identity.id) }));
   return { one, two, requests };
 }
+test('supplemental statistics keep zero, missing TN, exclusions and surface-distance unavailability visible', async ({ page }) => {
+  const { one } = await installEvaluations(page, { additional: true });
+  await page.goto('/evaluation');
+  await page.getByLabel('Evaluation record').selectOption(one.identity.id);
+  const table = page.getByRole('table').filter({ has: page.getByText('Count-derived segmentation statistics (0–1)', { exact: true }) });
+  await expect(table.getByRole('cell', { name: '0.000000', exact: true })).toHaveCount(6);
+  await expect(table.getByRole('cell', { name: 'Unavailable', exact: true })).toHaveCount(2);
+  await expect(page.getByText('Hausdorff distance / average surface distance: unavailable.', { exact: false })).toBeVisible();
+  await page.getByText('Case 2 artifact provenance', { exact: true }).click();
+  await expect(page.getByText('confusion_counts_unavailable', { exact: false }).first()).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download evaluation JSON', exact: true }).click();
+  const exported = JSON.parse(await readFile(await (await download).path(), 'utf8'));
+  expect(exported.summary.supplemental_metrics.macro_metrics.voxel_accuracy).toBe(0);
+  expect(exported.summary.supplemental_metrics.surface_distances.hausdorff_distance).toBeNull();
+});
+for (const role of ['Admin', 'DataScientist']) test(`${role} uploads actual multipart JSON then imports its real returned artifact ID`, async ({ page }) => {
+  const { one } = await installEvaluations(page, { role });
+  const payload = Buffer.from(JSON.stringify({ schema_version: 'offline-evaluation/1.0', metadata: one.identity.metadata, cases: one.cases.cases }));
+  let uploads = 0, imports = 0;
+  await page.route('**/api/v1/evaluations/artifacts', route => {
+    uploads++;
+    expect(route.request().headers()['content-type']).toMatch(/^multipart\/form-data; boundary=/);
+    expect(route.request().postData()).toContain(payload.toString());
+    return route.fulfill({ status: 201, json: { id: one.identity.source_artifact_id, sha256: createHash('sha256').update(payload).digest('hex'),
+      size_bytes: payload.length, schema_version: 'offline-evaluation/1.0', created_at: one.identity.created_at } });
+  });
+  await page.route('**/api/v1/evaluations/import', route => {
+    imports++;
+    expect(route.request().postDataJSON()).toEqual({ source_artifact_id: one.identity.source_artifact_id, metadata: one.identity.metadata });
+    return route.fulfill({ status: imports === 1 ? 503 : 200, json: imports === 1 ? { detail: 'Synthetic response lost after import' } : one.summary });
+  });
+  await page.goto('/evaluation');
+  await page.getByLabel('Offline evaluation JSON').setInputFiles({ name: 'synthetic.json', mimeType: 'application/json', buffer: payload });
+  await page.getByRole('button', { name: 'Upload evaluation artifact', exact: true }).click();
+  await expect(page.getByText('Artifact stored and verified:', { exact: false })).toBeVisible();
+  expect(uploads).toBe(1); expect(imports).toBe(0);
+  await page.getByRole('button', { name: 'Import stored evaluation', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Retry uses this same stored artifact ID');
+  expect(imports).toBe(1);
+  await page.getByRole('button', { name: 'Import stored evaluation', exact: true }).click();
+  await expect(page.getByText('Evaluation imported.', { exact: false })).toBeVisible();
+  expect(uploads).toBe(1); expect(imports).toBe(2);
+});
+
+test('read-only researcher has no import controls', async ({ page }) => {
+  await installEvaluations(page, { role: 'Researcher' });
+  await page.goto('/evaluation');
+  await expect(page.getByRole('heading', { name: 'Accessible imported evaluations' })).toBeVisible();
+  await expect(page.getByLabel('Offline evaluation JSON')).toHaveCount(0);
+});
+
+test('invalid JSON produces an actionable error without uploading or importing', async ({ page }) => {
+  await installEvaluations(page);
+  let writes = 0;
+  await page.route('**/api/v1/evaluations/artifacts', route => { writes++; return route.abort(); });
+  await page.goto('/evaluation');
+  await page.getByLabel('Offline evaluation JSON').setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{broken') });
+  await page.getByRole('button', { name: 'Upload evaluation artifact', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('No upload was sent');
+  expect(writes).toBe(0);
+  await expect(page.getByRole('button', { name: 'Import stored evaluation', exact: true })).toHaveCount(0);
+});
+test('evaluation downloads contain the recorded evidence and print invokes the browser PDF workflow', async ({ page }, testInfo) => {
+  await page.addInitScript(() => { window.print = () => { document.documentElement.dataset.printCalls = '1'; }; });
+  const { one } = await installEvaluations(page);
+  await page.goto('/evaluation');
+  await page.getByLabel('Evaluation record').selectOption(one.identity.id);
+  const jsonDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download evaluation JSON', exact: true }).click();
+  const json = await jsonDownload;
+  expect(json.suggestedFilename()).toBe(`vascuai-evaluation-${one.identity.id}.json`);
+  const report = JSON.parse(await readFile(await json.path(), 'utf8'));
+  expect(report.summary.macro_metrics.dice).toBe(0);
+  expect(report.summary.macro_metrics.precision).toBeNull();
+  expect(report.cases.cases[1].exclusion_reason).toBe('Synthetic exclusion');
+  expect(report.quantitative_stenosis_available).toBe(false);
+  const csvDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download evaluation CSV', exact: true }).click();
+  const csv = await csvDownload;
+  const content = await readFile(await csv.path(), 'utf8');
+  expect(content).toContain('macro_headline'); expect(content).toContain('case_excluded');
+  expect(content).toContain(one.summary.checkpoint_sha256);
+  await page.getByRole('button', { name: 'Print / Save evaluation PDF', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-print-calls', '1');
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.getByText('Research segmentation evidence only.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download evaluation JSON', exact: true })).toBeHidden();
+  const pdf = await page.pdf({ path: testInfo.outputPath('synthetic-evaluation-report.pdf'), format: 'A4', printBackground: true });
+  expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+});
 test('empty evaluations are honest and refresh recovers an API failure', async ({ page }) => {
   await installApi(page); let fail = true;
   await page.route('**/api/v1/evaluations?*', (route) => route.fulfill(fail

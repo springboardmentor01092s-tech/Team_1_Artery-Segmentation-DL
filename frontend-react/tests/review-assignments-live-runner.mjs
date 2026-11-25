@@ -1,0 +1,154 @@
+// Real FastAPI/PostgreSQL and synthetic CT only; never mocked network responses.
+import {chromium,expect} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import path from 'node:path';
+const origin=process.env.PLAYWRIGHT_BASE_URL,artifacts=process.env.PLAYWRIGHT_ARTIFACT_DIR,caseId=Number(process.env.REVIEW_QA_CASE);
+if(new URL(origin).hostname!=='127.0.0.1'||!artifacts||!Number.isSafeInteger(caseId))throw new Error('Disposable QA configuration required');
+const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},acceptDownloads:true});
+await context.route('**/*',route=>['127.0.0.1','localhost'].includes(new URL(route.request().url()).hostname)?route.continue():route.abort());
+const errors=[];context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));const page=await context.newPage();
+async function login(email){
+  await page.goto(origin+'/login');await page.getByLabel('Email address',{exact:true}).fill(email);
+  await page.getByLabel('Password',{exact:true}).fill(process.env.REVIEW_QA_PASSWORD);
+  await page.getByRole('button',{name:'Sign in to workspace',exact:true}).click();await expect(page).not.toHaveURL(/\/login$/);
+  await page.goto(origin+'/review-assignments');
+}
+async function logout(){await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page).toHaveURL(/\/login$/);}
+async function api(url,method='GET',body){return page.evaluate(async({url,method,body})=>{
+  const r=await fetch('/api/v1'+url,{method,headers:{Authorization:'Bearer '+localStorage.getItem('vascuai_token'),'Content-Type':'application/json'},
+    ...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};
+},{url,method,body});}
+async function load(id){await page.getByLabel('Assignment',{exact:true}).selectOption(id);await page.getByRole('button',{name:'Load selected assignment',exact:true}).click();
+  await expect(page.getByLabel('Private unverified preparation notes')).toBeVisible();}
+try{
+  await login(process.env.REVIEW_QA_ADMIN);
+  await page.getByLabel('Review case',{exact:true}).selectOption(String(caseId));
+  await page.getByRole('button',{name:'Inspect original CT identity',exact:true}).click();
+  await expect(page.getByText('Verified original CT SHA-256:',{exact:false})).toContainText(process.env.REVIEW_QA_HASH);
+  await page.getByLabel('R1 reviewer',{exact:true}).selectOption(process.env.REVIEW_QA_R1_ID);
+  await page.getByLabel('R2 reviewer',{exact:true}).selectOption(process.env.REVIEW_QA_R2_ID);
+  await page.getByLabel('Protocol version',{exact:true}).fill('synthetic-browser-unapproved-v0.1');await page.getByRole('checkbox').check();
+  const assigning=page.waitForResponse(r=>r.url().endsWith('/review-studies')&&r.request().method()==='POST');
+  await page.getByRole('button',{name:'Create R1/R2 assignments',exact:true}).click();
+  const response=await assigning;assert.equal(response.status(),201);const result=await response.json(),[r1,r2]=result.assignments;
+  assert.equal(result.clinical_gate_authorized,false);assert.equal(result.training_release_authorized,false);
+  await expect(page.getByText(`Case ${caseId} assigned. Only assignment metadata is shown.`)).toBeVisible();await logout();
+  await login(process.env.REVIEW_QA_R1);await load(r1.id);
+  const ctRequests=[];const track=r=>{const p=new URL(r.url()).pathname;if(p.startsWith('/api/v1/'))ctRequests.push(p);};page.on('request',track);
+  await page.getByRole('button',{name:'Open blinded original CT viewer',exact:true}).click();
+  await expect(page.getByTestId('ct-only-ready')).toHaveText('Verified original CT · 1 volume · no overlays.',{timeout:30000});
+  const ctViewer=page.getByRole('region',{name:'Blinded original CT viewer'});
+  await expect(ctViewer.getByRole('img',{name:'Original CT slices without overlays'})).toBeVisible();
+  await ctViewer.getByLabel('Axial CT slice',{exact:true}).fill('2');
+  await expect(ctViewer.getByText('Native IJK:',{exact:false})).toContainText('2, 3, 2');
+  await ctViewer.getByLabel('CT window width',{exact:true}).fill('800');await ctViewer.getByRole('button',{name:'Zoom CT in',exact:true}).click();
+  const formal=page.getByRole('region',{name:'Formal unverified lesion annotation'});
+  await formal.getByRole('button',{name:'Add manual lesion row',exact:true}).click();
+  for(const name of ['Lesion center','Proximal boundary','Distal boundary','Minimum caliper start','Minimum caliper end','Reference caliper start','Reference caliper end'])
+    await formal.getByRole('button',{name:`Capture ${name}`,exact:true}).click();
+  await formal.getByLabel('Manual Minimum caliper start native IJK',{exact:true}).fill('1, 2, 3');
+  await formal.getByRole('button',{name:'Apply manual Minimum caliper start',exact:true}).click();
+  await expect(formal.getByLabel('Minimum caliper start native IJK',{exact:true})).toHaveText('1, 2, 3');
+  const savingFormal=page.waitForResponse(r=>r.url().endsWith('/annotation-draft')&&r.request().method()==='PUT');
+  await formal.getByRole('button',{name:'Save formal unverified draft',exact:true}).click();
+  const formalResponse=await savingFormal;assert.equal(formalResponse.status(),201);const formalSaved=await formalResponse.json();
+  assert.equal(formalSaved.document.lesions[0].percentage_narrowing,null);assert.equal(formalSaved.document.lesions[0].severity_category,null);
+  assert.deepEqual(formalSaved.document.lesions[0].center_ijk,[2,3,2]);
+  assert.deepEqual(formalSaved.document.lesions[0].minimum_caliper_start_ijk,[1,2,3]);
+  assert.equal(ctRequests.filter(p=>p.endsWith('/source')).length,1);
+  assert.ok(ctRequests.every(p=>p.startsWith(`/api/v1/review-assignments/${r1.id}`)));
+  await page.screenshot({path:path.join(artifacts,'actual-api-blinded-ct-r1.png'),fullPage:true});
+  await ctViewer.getByRole('button',{name:'Close original CT viewer',exact:true}).click();page.off('request',track);
+  const input=page.getByLabel('Private unverified preparation notes');await input.fill('R1 synthetic private preparation');
+  await page.getByRole('button',{name:'Save private review draft',exact:true}).click();await expect(page.getByText('Server revision: 1.',{exact:false})).toBeVisible();
+  assert.equal((await api(`/review-assignments/${r2.id}/draft`)).status,404);
+  for(const url of ['/cases','/evaluations',`/cases/${caseId}/segmentations`,`/cases/${caseId}/workflow`,`/cases/${caseId}/volume/metadata`])
+    assert.equal((await api(url)).status,403);
+  const downloaded=page.waitForEvent('download');await page.getByRole('button',{name:'Download verified original CT',exact:true}).click();
+  const file=await downloaded,bytes=await readFile(await file.path());assert.equal(createHash('sha256').update(bytes).digest('hex'),process.env.REVIEW_QA_HASH);
+  const changed=await api(`/review-assignments/${r1.id}/draft`,'PUT',{notes:'R1 other-tab revision',expected_revision:1,clinical_gate_authorized:false,training_release_authorized:false});
+  assert.equal(changed.status,200);await input.fill('R1 unsaved conflicting text');await page.getByRole('button',{name:'Save private review draft',exact:true}).click();
+  await expect(input).toHaveValue('R1 unsaved conflicting text');await expect(page.getByRole('button',{name:'Save private review draft',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'Reload latest and replace my notes',exact:true}).click();await expect(input).toHaveValue('R1 other-tab revision');
+  await page.screenshot({path:path.join(artifacts,'synthetic-ct-only-private-review.png'),fullPage:true});
+  await logout();await login(process.env.REVIEW_QA_R2);await load(r2.id);await expect(input).toHaveValue('');
+  assert.equal((await api(`/review-assignments/${r1.id}/annotation-draft`)).status,404);
+  ctRequests.length=0;page.on('request',track);
+  await page.getByRole('button',{name:'Open blinded original CT viewer',exact:true}).click();
+  await expect(page.getByTestId('ct-only-ready')).toHaveText('Verified original CT · 1 volume · no overlays.',{timeout:30000});
+  assert.equal(ctRequests.filter(p=>p.endsWith('/source')).length,1);
+  assert.ok(ctRequests.every(p=>p.startsWith(`/api/v1/review-assignments/${r2.id}`)));
+  const secondFormal=page.getByRole('region',{name:'Formal unverified lesion annotation'});
+  await secondFormal.getByRole('button',{name:'Save formal unverified draft',exact:true}).click();
+  await expect(secondFormal.getByRole('status',{name:'Formal worksheet status',exact:true})).toContainText('saved at revision 1');
+  await secondFormal.getByRole('checkbox',{name:/I explicitly freeze/}).check();
+  await secondFormal.getByRole('button',{name:'Submit immutable unverified review',exact:true}).click();
+  await expect(secondFormal.getByText('This submitted review is immutable.',{exact:false})).toBeVisible();
+  await page.screenshot({path:path.join(artifacts,'actual-api-blinded-ct-r2.png'),fullPage:true});
+  await page.getByRole('button',{name:'Close original CT viewer',exact:true}).click();page.off('request',track);
+  assert.equal((await api(`/review-assignments/${r1.id}/draft`)).status,404);
+  await input.fill('R2 separate synthetic preparation');await page.getByRole('button',{name:'Save private review draft',exact:true}).click();
+  await expect(page.getByText('Server revision: 1.',{exact:false})).toBeVisible();
+  await logout();await login(process.env.REVIEW_QA_R1);await load(r1.id);await expect(input).toHaveValue('R1 other-tab revision');
+  await page.getByRole('button',{name:'Open blinded original CT viewer',exact:true}).click();
+  await expect(page.getByTestId('ct-only-ready')).toHaveText('Verified original CT · 1 volume · no overlays.',{timeout:30000});
+  await page.getByRole('button',{name:'Load my formal server draft',exact:true}).click();
+  await expect(page.getByLabel('Lesion center native IJK',{exact:true})).toHaveText('2, 3, 2');
+  const finalFormal=page.getByRole('region',{name:'Formal unverified lesion annotation'});
+  await finalFormal.getByRole('checkbox',{name:/I explicitly freeze/}).check();
+  await finalFormal.getByRole('button',{name:'Submit immutable unverified review',exact:true}).click();
+  await expect(finalFormal.getByText('This submitted review is immutable.',{exact:false})).toBeVisible();
+  await expect(finalFormal.getByRole('button',{name:'Save formal unverified draft',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'Close original CT viewer',exact:true}).click();
+  await logout();await login(process.env.REVIEW_QA_ADMIN);await page.goto(origin+'/review-adjudications');
+  await page.getByLabel('Adjudication study',{exact:true}).selectOption(result.id);
+  await page.getByLabel('Verified third reviewer',{exact:true}).selectOption(process.env.REVIEW_QA_CREDENTIAL);
+  const allocating=page.waitForResponse(r=>r.url().endsWith('/adjudicator')&&r.request().method()==='POST');
+  await page.getByRole('button',{name:'Assign after both reviews are frozen',exact:true}).click();
+  const allocated=await allocating;assert.equal(allocated.status(),201);const adjudication=await allocated.json();
+  await logout();await login(process.env.REVIEW_QA_R3);await page.goto(origin+'/review-adjudications');
+  await page.getByLabel('Adjudication assignment',{exact:true}).selectOption(adjudication.id);
+  await page.getByRole('button',{name:'Load selected adjudication',exact:true}).click();
+  await expect(page.getByText('Frozen independent reviews',{exact:true})).toBeVisible();
+  const thirdCtRequests=[],trackThird=r=>{const p=new URL(r.url()).pathname;if(p.startsWith('/api/v1/'))thirdCtRequests.push(p);};
+  page.on('request',trackThird);
+  await page.getByRole('button',{name:'Open adjudication original CT viewer',exact:true}).click();
+  const thirdCt=page.getByRole('region',{name:'Adjudication original CT viewer'});
+  await expect(thirdCt.getByTestId('ct-only-ready')).toHaveText('Verified original CT · 1 volume · no overlays.',{timeout:30000});
+  await thirdCt.getByLabel('Axial CT slice',{exact:true}).fill('2');
+  await expect(thirdCt.getByText('Native IJK:',{exact:false})).toContainText('2, 3, 2');
+  await thirdCt.getByLabel('CT window width',{exact:true}).fill('800');await thirdCt.getByRole('button',{name:'Zoom CT in',exact:true}).click();
+  await thirdCt.screenshot({path:path.join(artifacts,'actual-api-adjudication-ct.png')});
+  assert.ok(thirdCtRequests.some(p=>p.endsWith('/source')));
+  assert.ok(thirdCtRequests.every(p=>p.startsWith(`/api/v1/review-adjudications/${adjudication.id}`)));
+  await expect(thirdCt.getByRole('region',{name:'Formal unverified lesion annotation'})).toHaveCount(0);
+  await thirdCt.getByRole('button',{name:'Close original CT viewer',exact:true}).click();page.off('request',trackThird);
+  await page.getByText('Protocol and documentation coverage',{exact:true}).click();
+  await expect(page.getByText(/Counts describe recorded fields/)).toBeVisible();
+  for(const url of ['/cases','/evaluations',`/cases/${caseId}/segmentations`,`/review-assignments/${r1.id}/annotation-draft`])assert.equal((await api(url)).status,403);
+  await page.getByLabel('Outcome',{exact:true}).selectOption('unresolved');
+  await page.getByLabel('Decision or unresolved reason',{exact:true}).fill('Synthetic parent evidence remains unassessed; no clinical ground truth.');
+  await page.getByRole('button',{name:'Add manual correspondence',exact:true}).click();
+  await page.getByLabel('Correspondence 1 R1 lesions',{exact:true}).selectOption(formalSaved.document.lesions[0].draft_id);
+  await page.getByLabel('Relationship',{exact:true}).selectOption('only_r1');
+  await page.getByLabel('Correspondence evidence',{exact:true}).fill('Synthetic R1 row has no R2 counterpart.');
+  await page.getByLabel('Decision evidence',{exact:true}).fill('Unresolved synthetic test review; no expert finding.');
+  await page.getByRole('button',{name:'Save adjudication revision',exact:true}).click();
+  await expect(page.getByText('Unverified adjudication saved at revision 1.',{exact:true})).toBeVisible();
+  await page.getByLabel('I reviewed the frozen source-bound records.',{exact:false}).check();
+  await page.getByRole('button',{name:'Freeze unverified adjudication',exact:true}).click();
+  await expect(page.getByText('Immutable adjudication recorded.',{exact:false})).toBeVisible();
+  await page.screenshot({path:path.join(artifacts,'actual-api-unverified-adjudication.png'),fullPage:true});
+  const ownThird=await api(`/review-adjudications/${adjudication.id}`);assert.equal(ownThird.status,200);
+  assert.equal(ownThird.data.current.record.status,'adjudicated_unverified');
+  await logout();await login(process.env.REVIEW_QA_R3);await page.goto(origin+'/review-adjudications');
+  await page.getByLabel('Adjudication assignment',{exact:true}).selectOption(adjudication.id);
+  await page.getByRole('button',{name:'Load selected adjudication',exact:true}).click();
+  await expect(page.getByText('Immutable adjudication recorded.',{exact:false})).toBeVisible();
+  await logout();await login(process.env.REVIEW_QA_R1);assert.equal((await api(`/review-adjudications/${adjudication.id}`)).status,403);
+  assert.deepEqual(errors,[]);console.log(JSON.stringify({status:'PASS',actual_api:true,disposable_postgresql:true,
+    coordinator_assignment:true,two_reader_isolation:true,original_ct_sha_verified:true,embedded_ct_r1:true,embedded_ct_r2:true,
+    no_prediction_viewer_requests:true,conflict_reload:true,logout_login:true,third_reviewer_adjudication:true,embedded_ct_r3:true,synthetic_credentials_only:true,clinical_release:false,training_release:false}));
+}finally{await browser.close();}

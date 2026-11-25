@@ -55,13 +55,29 @@ class Settings(BaseSettings):
     # Optional immutable reference-only display pack; no inference or clinical gate.
     VASCULAI_REFERENCE_PROFILE_DIR: str | None = None
 
+    # Optional, isolated synthetic-only stenosis research experiment. This is
+    # intentionally separate from the patient-case clinical provider settings.
+    VASCULAI_SYNTHETIC_STENOSIS_CHECKPOINT: str | None = None
+    VASCULAI_SYNTHETIC_STENOSIS_CHECKPOINT_SHA256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+
     # Optional model runtime; normal APIs remain available without PyTorch/weights.
     VASCULAI_MODEL_CHECKPOINT: str | None = None
+    # Explicit dispatch: historical checkpoints always retain the original recipe.
+    VASCULAI_MODEL_ARCHITECTURE: Literal["smallunet3d", "segresnet-1mm-v1"] = "smallunet3d"
+    VASCULAI_MODEL_CHECKPOINT_SHA256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     VASCULAI_MODEL_THRESHOLD: float = Field(default=0.70, ge=0, le=1, allow_inf_nan=False)
     VASCULAI_MODEL_DEVICE: Literal["cpu", "cuda", "auto"] = "cpu"
     VASCULAI_MODEL_BATCH_SIZE: int = Field(default=1, ge=1, le=16)
     VASCULAI_MODEL_THREADS: int = Field(default=4, ge=1, le=32)
     VASCULAI_MODEL_MAX_VOXELS: int = Field(default=67_108_864, ge=1, le=134_217_728)
+
+    @model_validator(mode="after")
+    def frozen_segmentation_recipe(self):
+        if (self.VASCULAI_MODEL_ARCHITECTURE == "segresnet-1mm-v1"
+                and "VASCULAI_MODEL_THRESHOLD" in self.model_fields_set
+                and self.VASCULAI_MODEL_THRESHOLD != .5):
+            raise ValueError("segresnet-1mm-v1 requires threshold 0.5; the legacy threshold cannot override its frozen recipe")
+        return self
 
     # ── Volume ingestion limits (configurable via .env) ───────────────────────
     # Maximum *compressed* file size accepted for .nii.gz uploads (upload payload).

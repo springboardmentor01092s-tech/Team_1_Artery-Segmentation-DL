@@ -7,6 +7,7 @@ import { useCandidateRegion } from '../hooks/useCandidateRegion';
 import { useExplanationLayer } from '../hooks/useExplanationLayer';
 import { attributionLegend, attributionPresentation, navigateToAttributionSlice } from '../lib/attribution';
 import ExperimentalCandidatePreview from './ExperimentalCandidatePreview';
+import AnnotationDraft from './AnnotationDraft';
 
 export default function SegmentationViewer(props) {
   const [attempt, setAttempt] = useState(0);
@@ -198,7 +199,7 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
   return (
     <section className="volume-viewer" aria-label={`CT and segmentation viewer for run ${result.id}`}>
       <div className="volume-viewer-heading"><div><h2 ref={heading} tabIndex={-1}>CT + predicted segmentation</h2><p className="text-xs text-muted">Case {caseId} · Run {result.id.slice(0, 8)}</p></div><button className="btn btn-ghost btn-sm" onClick={onClose}>Close viewer</button></div>
-      <p className="notice">Experimental research visualization — not for diagnostic use. This baseline has substantial segmentation limitations. Magenta indicates predicted foreground; no clinical accuracy is implied.</p>
+      <p className="notice">Experimental research visualization — not for diagnostic use. Predictions can be incomplete or incorrect. Magenta indicates predicted foreground; no clinical accuracy is implied.</p>
       {phase && !error && <div role="status"><p>{phase}</p>{Object.entries(progress).map(([artifact, value]) => <p className="text-xs" key={artifact}>{artifact === 'source' ? 'CT' : 'Mask'}: {(value.loaded / 1024 ** 2).toFixed(1)} MiB{value.total ? ` / ${(value.total / 1024 ** 2).toFixed(1)} MiB` : ' received'}</p>)}</div>}
       {error && <div className="notice error" role="alert"><p>{error}</p><p>Original authenticated downloads remain available in history.</p><button className="btn btn-ghost btn-sm" onClick={onRetry}>Retry viewer</button></div>}
       <div className={`volume-canvas-container${!ready ? ' volume-canvas-loading' : ''}`}>
@@ -208,7 +209,9 @@ function ViewerSession({ caseId, result, onClose, onRetry, localization = null, 
           {lesionLayer.markers.map(marker => <button key={`${marker.id}-${marker.plane}`} className={`lesion-marker${marker.selected ? ' lesion-marker-selected' : ''}`} style={{ left: `${marker.x}%`, top: `${marker.y}%` }} title={`${marker.plane} · Candidate ${marker.id}`} aria-label={`Select ${marker.plane} candidate ${marker.id}`} aria-pressed={marker.selected} onClick={() => onLesionSelect?.(marker.id)} />)}
         </div>}
       </div>
-      {ready && experimentalSession && !localization && <ExperimentalCandidatePreview {...experimentalSession} segmentation={result} location={location} view={view} onSlices={() => changeView('slices')}/>}
+      {ready && experimentalSession && !localization && <AnnotationDraft key={`${result.id}-${result.metadata.source_sha256}`}
+        caseId={caseId} result={result} geometry={experimentalSession.geometry} location={location}/>}
+      {ready && experimentalSession && !localization && <ExperimentalCandidatePreview key={`research-preview:${result.id}-${result.metadata.source_sha256}`} {...experimentalSession} segmentation={result} location={location} view={view} onSlices={() => changeView('slices')}/>}
       {localization && <>
         <p className="text-xs">Point legend: cyan circle = supplied candidate; yellow ring = selected candidate. Magenta remains predicted artery, not stenosis. Points are shown only on their current 2D slices.</p>
         {lesionLayer.error && <p className="notice error" role="alert">{lesionLayer.error} The original CT display is retained.</p>}

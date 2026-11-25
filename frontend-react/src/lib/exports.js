@@ -1,5 +1,6 @@
 import { requireMeasurementGate } from "./quantitative-gate.js";
 import { toCaseWorkflow } from '../api/cases-contract.js';
+import { METRICS, SUPPLEMENTAL_METRICS, validateSummary as validateEvaluationSummary, validateCases as validateEvaluationCases } from '../api/evaluations-contract.js';
 
 // Export an explicit allowlist; internal storage paths never leave the UI adapter.
 export function caseRecord(item) {
@@ -40,7 +41,28 @@ const stenosisMeasurementFields = [
 
 function requireExportableMeasurements(value, provenance) {
   if (!value || typeof value !== "object") return;
-  if (value.schema_version === "experimental-candidates/1.0"
+  if (['simulated-research-assessment/0.1','simulated-research-record/0.1','full-volume-research-profile/0.1','offline-research-evidence/0.1','offline-research-workspace/0.1','verified-offline-research/0.1'].includes(value.schema_version)
+      || (Object.hasOwn(value,'sampled_area_mm2') && Object.hasOwn(value,'r1_reference_area_mm2')
+        && Object.hasOwn(value,'r2_reference_area_mm2') && Object.hasOwn(value,'comparison'))
+      || (value.origin === 'algorithmic_simulation_on_model_derived_mask' && Object.hasOwn(value,'source_evidence_sha256'))
+      || (Object.hasOwn(value,'research_measurement') && value.status === 'algorithmically_proposed_unverified')
+      || Object.hasOwn(value,'diagnostic_diameter_reduction_percent')
+      || (value.origin === 'manual_unverified_research' && Object.hasOwn(value,'diagnostic_diameter_reduction_percent'))) {
+    throw new Error('Provisional research assessments cannot enter normal reports. Use the separate source-bound research JSON download.');
+  }
+  if (['ct-review-note/0.1','independent-lesion-review/0.1','independent-review-submission/0.1','review-submission-amendment/0.1','review-adjudication/0.1','review-adjudication-version/0.1','review-documentation-coverage/0.1'].includes(value.schema_version)) {
+    throw new Error('Unverified annotation drafts and private review notes cannot enter normal reports. Use Assigned CT review.');
+  }
+  if (Object.hasOwn(value,'r1_submission_sha256') && Object.hasOwn(value,'r2_submission_sha256')
+      && Object.hasOwn(value,'correspondences') && Object.hasOwn(value,'resolutions')) {
+    throw new Error('Unverified adjudication records cannot enter ordinary reports. Use the separate restricted review workspace.');
+  }
+  if (value.schema_version === 'lesion-annotation-workspace/0.1'
+      || (Object.hasOwn(value, 'draft_id') && Object.hasOwn(value, 'center_ijk')
+        && Object.hasOwn(value, 'minimum_lumen_diameter_mm') && Object.hasOwn(value, 'percentage_narrowing'))) {
+    throw new Error('Unverified annotation drafts cannot be included in normal reports. Use the separate, source-bound draft download.');
+  }
+  if (["experimental-candidates/1.0","experimental-automatic-candidates/0.1","automatic-branch-evidence/0.1","experimental-branch-graph/0.1"].includes(value.schema_version)
       || (value.kind === "experimental_candidate" && Object.hasOwn(value, "candidate_id")
         && Object.hasOwn(value, "sample_ijk") && Object.hasOwn(value, "world_ras_mm"))) {
     throw new Error("Experimental candidate previews cannot be included in ordinary reports or metadata exports. Use the separate standalone research-preview JSON workflow.");
@@ -72,6 +94,65 @@ function exportJson(value) {
   const content = JSON.stringify(value, null, 2);
   requireExportableMeasurements(JSON.parse(content));
   return content;
+}
+
+function evaluationSnapshot(summary, cases) {
+  // Validate the exact detached export, including toJSON hooks. Both numeric
+  // stenosis guards and the evaluation contracts apply before any Blob exists.
+  const report = JSON.parse(exportJson({ schema_version: 'evaluation-report/1.0',
+    document_type: 'research_segmentation_evaluation', clinical_validation: false,
+    quantitative_stenosis_available: false, headline_aggregation: 'macro_unweighted_per_case',
+    limitation: 'Research segmentation evaluation; not clinical validation or quantitative stenosis.',
+    summary, cases }));
+  validateEvaluationSummary(report.summary);
+  validateEvaluationCases(report.cases, report.summary.id);
+  const ordered = ids => [...ids].sort((a, b) => a - b).join(',');
+  if (ordered(report.summary.case_ids) !== ordered(report.cases.cases.map(row => row.case_id))
+      || ['source_artifact_id', 'checkpoint_sha256', 'model_id', 'threshold'].some(key => report.summary[key] !== report.cases[key])
+      || JSON.stringify(report.summary.metadata) !== JSON.stringify(report.cases.metadata)) {
+    throw new Error('Evaluation summary and cases do not describe the same immutable evidence. Refresh before exporting.');
+  }
+  if (JSON.stringify(report.summary.supplemental_metrics ?? null) !== JSON.stringify(report.cases.supplemental_metrics ?? null)) {
+    throw new Error('Supplemental evaluation evidence differs. Refresh before exporting.');
+  }
+  const excluded = report.cases.cases.filter(row => row.exclusion_reason !== null);
+  if (report.summary.included_case_count !== report.cases.cases.length - excluded.length
+      || !Array.isArray(report.summary.exclusions) || report.summary.exclusions.length !== excluded.length
+      || excluded.some(row => !report.summary.exclusions.some(item => item.case_id === row.case_id && item.reason === row.exclusion_reason))) {
+    throw new Error('Evaluation exclusions differ. No export was created.');
+  }
+  return report;
+}
+
+export function evaluationJsonBlob(summary, cases) {
+  return new Blob([JSON.stringify(evaluationSnapshot(summary, cases), null, 2)], { type: 'application/json;charset=utf-8' });
+}
+
+export function evaluationCsvBlob(summary, cases) {
+  const report = evaluationSnapshot(summary, cases);
+  const base = { evaluation_id: report.summary.id, model_id: report.summary.model_id,
+    checkpoint_sha256: report.summary.checkpoint_sha256, source_artifact_id: report.summary.source_artifact_id,
+    threshold: report.summary.threshold, metric_definition_version: report.summary.metadata.metric_definitions.version,
+    clinical_validation: false };
+  const record = (type, values, row = {}) => ({ ...base, record_type: type,
+    case_id: row.case_id ?? null, dataset_case_id: row.dataset_case_id ?? null,
+    exclusion_reason: row.exclusion_reason ?? null,
+    ...Object.fromEntries(METRICS.map(key => [key, values[key]])),
+    ...Object.fromEntries(SUPPLEMENTAL_METRICS.map(key => [key,
+      (type === 'macro_headline' ? report.summary.supplemental_metrics?.macro_metrics
+        : type === 'pooled_micro_separate' ? report.summary.supplemental_metrics?.pooled_micro_metrics
+          : report.summary.supplemental_metrics?.per_case.find(item => item.case_id === row.case_id)?.metrics)?.[key] ?? null])),
+    supplemental_macro_denominators: type === 'macro_headline' && report.summary.supplemental_metrics
+      ? JSON.stringify(report.summary.supplemental_metrics.macro_denominators) : null,
+    surface_distances_status: 'unavailable_not_computed',
+    macro_denominators: type === 'macro_headline' ? JSON.stringify(report.summary.macro_denominators) : null,
+    included_case_count: report.summary.included_case_count, total_case_count: report.summary.case_count,
+    reference_sha256: row.reference_sha256 ?? null, prediction_sha256: row.prediction_sha256 ?? null,
+    zero_denominator: 'null; CSV empty cell, never imputed as zero' });
+  const rows = [record('macro_headline', report.summary.macro_metrics)];
+  if (report.summary.pooled_micro_metrics !== null) rows.push(record('pooled_micro_separate', report.summary.pooled_micro_metrics));
+  rows.push(...report.cases.cases.map(row => record(row.exclusion_reason === null ? 'case_included' : 'case_excluded', row.metrics, row)));
+  return new Blob(['\uFEFF', serializeCsv(rows)], { type: 'text/csv;charset=utf-8' });
 }
 
 // Keep the report allowlist and independently enforce the measurement policy at
