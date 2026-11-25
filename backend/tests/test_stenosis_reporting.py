@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from fastapi import HTTPException
 import pytest
 from sqlalchemy import update
-from app.models import Case, Patient, SegmentationResult, StenosisAnalysisJob as Job, StenosisLesion, StenosisAnalysisResult
+from app.models import Case, Patient, SegmentationResult, StenosisAnalysisJob as Job
 from app.services import stenosis_jobs as jobs, stenosis_results as results, stenosis_analytics as analytics, source_fingerprint as fingerprints
 from app.services.stenosis_reporting import csv_cell
 from app.schemas.stenosis_reporting import AnalyticsFilters
@@ -195,12 +195,31 @@ def test_pdf_escapes_hostile_case_and_report_text_as_literal_text(client,db,volu
     assert response.content.count(b'LESION_STRUCTURE_TOKEN')==1
 
 
-def test_malformed_persisted_result_becomes_controlled_integrity_report(client,db,volume,runtime):
+def test_malformed_persisted_result_becomes_controlled_integrity_report(client,db,volume,runtime,monkeypatch):
     job,result_id=completed(db,volume,runtime,count=1)
-    result=db.get(StenosisAnalysisResult,str(result_id))
-    lesion=db.query(StenosisLesion).filter_by(result_id=result.id).first()
-    lesion.payload_json={'lesion_id':'malformed fixture only'}
-    db.commit();db.expire_all()
+
+    # Result rows are immutable in PostgreSQL as well as in test SQLite. Model
+    # malformed persisted JSON at the read boundary instead of updating an
+    # existing lesion row and weakening/bypassing the database trigger.
+    original_load=results.SQLResultStore.load
+    def malformed_read(store,session,stored_result_id):
+        if str(stored_result_id)!=str(result_id):
+            return original_load(store,session,stored_result_id)
+
+        class MalformedReadSession:
+            def scalar(self,statement):
+                return session.scalar(statement)
+
+            def scalars(self,statement):
+                rows=session.scalars(statement).all()
+                return SimpleNamespace(all=lambda:[
+                    SimpleNamespace(lesion_id=row.lesion_id,payload_json={'lesion_id':'malformed fixture only'})
+                    for row in rows
+                ])
+
+        return original_load(store,MalformedReadSession(),stored_result_id)
+
+    monkeypatch.setattr(results.SQLResultStore,'load',malformed_read)
 
     response=client.get(endpoint(volume,job)+'/report.pdf',headers=volume.headers)
     assert response.status_code==200 and response.content.startswith(b'%PDF-')
