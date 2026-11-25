@@ -8,6 +8,8 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
+import struct
+import zlib
 
 import nibabel as nib
 import numpy as np
@@ -21,6 +23,24 @@ from app.schemas.review_adjudication import AdjudicationDocument
 from app.schemas.evaluation import Metrics
 from app.services.experimental_candidates import ResearchParameters, extract_candidates, mask_identity
 from app.services.stenosis_geometry import geometry_fingerprint
+
+
+def canonical_gzip(data):
+    """Build a byte-stable gzip member for synthetic cross-platform fixtures.
+
+    A stored DEFLATE stream avoids zlib-version-specific compression output;
+    fixed gzip metadata keeps source hashes stable across CI operating systems.
+    """
+    raw = bytes(data)
+    chunks = [raw[offset:offset + 65535] for offset in range(0, len(raw), 65535)] or [b""]
+    member = bytearray(b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff")
+    for index, chunk in enumerate(chunks):
+        length = len(chunk)
+        member.append(1 if index == len(chunks) - 1 else 0)  # BFINAL, stored block, byte aligned.
+        member.extend(struct.pack("<HH", length, length ^ 0xffff))
+        member.extend(chunk)
+    member.extend(struct.pack("<II", zlib.crc32(raw) & 0xffffffff, len(raw) & 0xffffffff))
+    return bytes(member)
 
 
 def procedure_boundary_bundle():
@@ -59,7 +79,7 @@ def asymmetric_bundle():
     geometry = VolumeGeometry(shape=mask.shape,affine=affine.tolist(),array_axis_order='nifti_i_j_k',world_convention='RAS',world_unit='mm')
     images = [nib.Nifti1Image(np.zeros(mask.shape,dtype=np.int16),affine),nib.Nifti1Image(mask,affine)]
     for image in images:image.header.set_xyzt_units('mm')
-    ct,labels = [gzip.compress(image.to_bytes(),mtime=0) for image in images]
+    ct,labels = [canonical_gzip(image.to_bytes()) for image in images]
     ct_sha = hashlib.sha256(ct).hexdigest()
     source = {'source_sha256':ct_sha,'mask_sha256':mask_identity(mask,1),
               'geometry_fingerprint':geometry_fingerprint(geometry,ct_sha),'mask_role':'model_prediction',

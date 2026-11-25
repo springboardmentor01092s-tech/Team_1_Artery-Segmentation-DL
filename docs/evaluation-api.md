@@ -207,7 +207,7 @@ No real checkpoint, dataset, cache, clinical output or frontend is modified.
 
 Work is isolated on `codex/evaluation-api`, based on fetched `origin/main`
 `5bc9f13cfe92460245931d8937b8e867f0373438`, in
-`C:/Users/vimzz/.codex/worktrees/evaluation-api/artery_demo`.
+`<WORKTREE_ROOT>`.
 The original research checkout was not switched or edited.
 
 Final hardening verification, from this worktree's `backend`, using the existing

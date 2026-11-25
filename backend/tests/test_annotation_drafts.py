@@ -389,7 +389,19 @@ def test_disposable_postgres_two_connections_same_revision_one_winner(client, pr
     latest = client.get(url, headers=prepared["headers"]).json()
     assert latest["revision"] == 2 and latest["document"]["reviewer_reference"] == winner
     assert db.scalar(select(func.count()).select_from(AnnotationDraft)) == 1
-    assert db.scalar(text("SHOW timezone")) == "UTC"
+    # PostgreSQL may name its UTC zone either "UTC" or "Etc/UTC". Assert
+    # the session's actual offsets match UTC in both standard and daylight
+    # seasons, rather than pinning a timezone alias string.
+    assert db.scalar(text("""
+        SELECT bool_and(
+            (instant AT TIME ZONE current_setting('TimeZone')) =
+            (instant AT TIME ZONE 'UTC')
+        )
+        FROM (VALUES
+            (TIMESTAMPTZ '2026-01-15 12:00:00+00'),
+            (TIMESTAMPTZ '2026-07-15 12:00:00+00')
+        ) AS samples(instant)
+    """)) is True
 
 
 def test_json_schema_parity_with_actual_stage1_javascript(client, prepared):

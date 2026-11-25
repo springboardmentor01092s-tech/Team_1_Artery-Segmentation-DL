@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "dataset_root": "<AUTHORIZED_DATASET_ROOT>",
+  "manifest": "<AUTHORIZED_SPLIT_MANIFEST>",
+  "expected_training_cases": 700,
+  "expected_validation_cases": 50,
+  "spatial_policy": "voxel_grid_only",
+  "output_root": "<LOCAL_OUTPUT_ROOT>",
+  "seed": 456,
+  "cpu_threads": 2,
+  "batch_size": 1,
+  "num_workers": 0,
+  "pin_memory": false,
+  "max_cache_bytes": 536870912,
+  "max_steps": 300,
+  "checkpoint_every": 100,
+  "validation_every": 300,
+  "model": {
+    "architecture": "SmallUNet3D",
+    "base_channels": 8
+  },
+  "preprocessing": {
+    "clip": [
+      -200,
+      800
+    ],
+    "normalization": "(image + 200) / 1000",
+    "nifti_scaling": "apply_once"
+  },
+  "sampling": {
+    "patch_size": [
+      64,
+      64,
+      64
+    ],
+    "foreground_probability": 0.5,
+    "attempted_empty_probability": 0.25,
+    "random_probability": 0.25,
+    "empty_attempts": 30,
+    "patches_per_case": 8,
+    "case_order": "shuffled_without_replacement"
+  },
+  "loss": {
+    "positive_weight": 5.0,
+    "smooth": 1e-06,
+    "aggregation": "mean_BCE_plus_mean_per_sample_soft_Dice"
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0002,
+    "weight_decay": 1e-05,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "gradient_clip_norm": 1.0
+  },
+  "validation": {
+    "threshold": 0.7,
+    "stride": 32
+  },
+  "initialization_checkpoint": {
+    "path": "<OPTIONAL_CHECKPOINT_PATH>",
+    "sha256": "e208fa586bb9bb50dc77b913caa0355a547bad529f9f0d61df17880b2efc5254"
+  }
+}

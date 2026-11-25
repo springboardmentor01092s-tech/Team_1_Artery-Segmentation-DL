@@ -200,7 +200,7 @@ reasons are recorded above and in the external final log.
 node --test tests/reporting.test.js
 npm test
 npm run lint
-npm run build -- --outDir C:/Users/vimzz/AppData/Local/Temp/vascuai-phase5-verification-vg3gkhjp/build-reviewed
+npm run build -- --outDir <LOCAL_TOOL_PATH>
 ```
 
 - Reporting unit/contracts: **19 passed**.
@@ -223,8 +223,8 @@ the repository. Working directory was the external verification directory, also
 keeping existing viewer screenshot outputs outside the repository.
 
 ```powershell
-node F:/Documents/artery_demo/frontend-react/node_modules/@playwright/test/cli.js test --config C:/Users/vimzz/AppData/Local/Temp/vascuai-phase5-verification-vg3gkhjp/playwright.config.cjs reporting.spec.js
-node F:/Documents/artery_demo/frontend-react/node_modules/@playwright/test/cli.js test --config C:/Users/vimzz/AppData/Local/Temp/vascuai-phase5-verification-vg3gkhjp/playwright.config.cjs reporting.spec.js explanations.spec.js stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js
+node <REPOSITORY_ROOT>/frontend-react/node_modules/@playwright/test/cli.js test --config <LOCAL_TOOL_PATH> reporting.spec.js
+node <REPOSITORY_ROOT>/frontend-react/node_modules/@playwright/test/cli.js test --config <LOCAL_TOOL_PATH> reporting.spec.js explanations.spec.js stenosis.spec.js stenosis-jobs.spec.js stenosis-results.spec.js segmentation.spec.js workspace.spec.js volume-viewer.spec.js
 ```
 
 Focused reporting run: **16 passed**. Final broad run: **118 passed (2.2 minutes), exit 0**.
@@ -241,7 +241,7 @@ that revealed lost URL updates during multiple edits and led to atomic Apply.
 The final broad result above is after the fix. No existing assertion was weakened.
 
 External logs/config/builds are under
-`C:\Users\vimzz\AppData\Local\Temp\vascuai-phase5-verification-vg3gkhjp`:
+`<LOCAL_TOOL_PATH>`:
 `backend-regression-final.log`, `browser-regression-final.log`, `unit-final.log`,
 `playwright.config.cjs`, `browser-results` and `build-reviewed`.
 

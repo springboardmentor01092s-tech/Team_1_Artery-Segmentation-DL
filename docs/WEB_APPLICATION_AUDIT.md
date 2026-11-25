@@ -4,7 +4,7 @@
 **Audit date:** 23 October 2026, Asia/Calcutta
 **Scope:** web application, integration, reliability, viewer presentation and ownership review.
 **Mode:** audit and this report only; no feature implementation.
-**Repository:** F:/Documents/artery_demo
+**Repository:** <REPOSITORY_ROOT>
 **Audited HEAD:** 428f52c1dbfe11b55bfa006c1916ac0973a7cd56
 
 ## 1. Executive summary
@@ -29,7 +29,7 @@ Teammate work exists in cached branch snapshots and remains protected. No teamma
 - Subject: Merge pull request #10 from baseline-model-diagnostics.
 - Starting tracked/staged changes: none.
 - Starting untracked work: .vscode/, docs/baseline-false-positive-audit.md, docs/codex-handoff-to-chatgpt.md and research/.
-- One existing worktree: F:/Documents/artery_demo. No checkout, branch switch, merge, rebase, reset, stage, commit, push or fetch was performed.
+- One existing worktree: <REPOSITORY_ROOT>. No checkout, branch switch, merge, rebase, reset, stage, commit, push or fetch was performed.
 - The requested docs/WEB_APPLICATION_AUDIT.md did not exist. It was created with exclusive-create semantics; no existing report was overwritten.
 - A 190-file source hash baseline was captured. Final preservation checks are recorded in section 20.
 
@@ -51,7 +51,7 @@ These are local remote-tracking snapshots, not a claim that the latest live GitH
 - **Migrations:** existing revisions 0001 through 0005 were inspected as source only. Revision 0005 has an index-before-table downgrade and explicitly deletes segmentation history. No migration was executed or modified.
 - **Viewer data path:** authenticated Axios -> protected source/mask endpoints -> bounded worker decompression and source checksum -> geometry validation -> NiiVue textures.
 - **Deployment:** nginx serves the compiled React frontend and forwards /api/ and /health paths; optional model overlay mounts external weights read-only. No deployment or existing service change occurred.
-- **Legacy frontend:** F:/Documents/artery_demo/frontend is retained historical demonstration content, not the active application. Roja's branch also uses a frontend tree; merging that scaffold is not equivalent to integrating her isolated component.
+- **Legacy frontend:** <REPOSITORY_ROOT>/frontend is retained historical demonstration content, not the active application. Roja's branch also uses a frontend tree; merging that scaffold is not equivalent to integrating her isolated component.
 
 ### Evidence index
 
@@ -59,44 +59,44 @@ All E references below resolve to current working-tree files. Teammate-only Git 
 
 | ID | File and relevant implementation |
 |---|---|
-| E01 | [App.jsx](F:/Documents/artery_demo/frontend-react/src/App.jsx), protectedPages and public routes |
-| E02 | [main.jsx](F:/Documents/artery_demo/frontend-react/src/main.jsx), React entry |
-| E03 | [main.py](F:/Documents/artery_demo/backend/app/main.py), router registration, sanitized errors and health |
-| E04 | [AuthContext.jsx](F:/Documents/artery_demo/frontend-react/src/context/AuthContext.jsx), AuthProvider restore effect |
-| E05 | [client.js](F:/Documents/artery_demo/frontend-react/src/api/client.js), bearer and current-session 401 handling |
-| E06 | [auth.py](F:/Documents/artery_demo/backend/app/routers/auth.py), real auth endpoints |
-| E07 | [dependencies.py](F:/Documents/artery_demo/backend/app/core/dependencies.py), database-authoritative JWT/user authorization |
-| E08 | [access-policy.json](F:/Documents/artery_demo/frontend-react/src/constants/access-policy.json) and [roles.py](F:/Documents/artery_demo/backend/app/core/roles.py) |
-| E09 | [CaseDetail.jsx](F:/Documents/artery_demo/frontend-react/src/pages/CaseDetail.jsx), CaseEdit, Imaging and CaseHistory |
-| E10 | [Reports.jsx](F:/Documents/artery_demo/frontend-react/src/pages/Reports.jsx), ReportPreview |
-| E11 | [cases-contract.js](F:/Documents/artery_demo/frontend-react/src/api/cases-contract.js), field mapping, updates and uploads |
-| E12 | [cases.py](F:/Documents/artery_demo/backend/app/routers/cases.py), case CRUD subset and upload handlers |
-| E13 | [volume_ingestion.py](F:/Documents/artery_demo/backend/app/services/volume_ingestion.py), bounded NIfTI admission |
-| E14 | [AnalysisResult.jsx](F:/Documents/artery_demo/frontend-react/src/pages/AnalysisResult.jsx), run/history/download/viewer workspace |
-| E15 | [segmentation.py](F:/Documents/artery_demo/backend/app/routers/segmentation.py), protected result/source endpoints |
-| E16 | [SegmentationViewer.jsx](F:/Documents/artery_demo/frontend-react/src/components/SegmentationViewer.jsx), ViewerSession and controls |
-| E17 | [niivue-adapter.js](F:/Documents/artery_demo/frontend-react/src/lib/niivue-adapter.js), createVolumeViewer and releaseViewer |
-| E18 | [volume-geometry.js](F:/Documents/artery_demo/frontend-react/src/lib/volume-geometry.js), inspectVolume, validatePair and volumeBudget |
-| E19 | [volume-loader.js](F:/Documents/artery_demo/frontend-react/src/lib/volume-loader.js) and [volume.worker.js](F:/Documents/artery_demo/frontend-react/src/workers/volume.worker.js) |
-| E20 | [segmentation-contract.js](F:/Documents/artery_demo/frontend-react/src/api/segmentation-contract.js), validated relative API routes and downloads |
-| E21 | [segmentation.spec.js](F:/Documents/artery_demo/frontend-react/tests/e2e/segmentation.spec.js), especially line 132 |
-| E22 | [workspace.spec.js](F:/Documents/artery_demo/frontend-react/tests/e2e/workspace.spec.js), workflows/accessibility |
-| E23 | [volume-viewer.spec.js](F:/Documents/artery_demo/frontend-react/tests/e2e/volume-viewer.spec.js) and [viewer-spike.spec.js](F:/Documents/artery_demo/frontend-react/tests/e2e/viewer-spike.spec.js) |
-| E24 | [conftest.py](F:/Documents/artery_demo/backend/tests/conftest.py), disposable database fixtures and automatic migration/drop behavior |
-| E25 | [create_admin.py](F:/Documents/artery_demo/backend/app/database/create_admin.py), operator bootstrap |
-| E26 | [Research.jsx](F:/Documents/artery_demo/frontend-react/src/pages/Research.jsx), explicit unavailable research services |
-| E27 | [ForgotPassword.jsx](F:/Documents/artery_demo/frontend-react/src/pages/ForgotPassword.jsx), explicit recovery limitation |
-| E28 | [patients.py](F:/Documents/artery_demo/backend/app/routers/patients.py), create/list only |
-| E29 | [nginx.conf](F:/Documents/artery_demo/deploy/nginx.conf), HTTP routing and 300-second upstream timeout |
-| E30 | [compose.model.yaml](F:/Documents/artery_demo/deploy/compose.model.yaml), optional runtime configuration |
-| E31 | [index.css](F:/Documents/artery_demo/frontend-react/src/index.css), responsive breakpoints, focus, reduced-motion and viewer styling |
-| E32 | [Alerts.jsx](F:/Documents/artery_demo/frontend-react/src/pages/Alerts.jsx) and [preferences.js](F:/Documents/artery_demo/frontend-react/src/lib/preferences.js), explicitly local activity/preferences |
-| E33 | [case.py](F:/Documents/artery_demo/backend/app/schemas/case.py), CaseUpdate nullable schema |
-| E34 | [frontend-segmentation-viewer.md](F:/Documents/artery_demo/docs/frontend-segmentation-viewer.md), prior real-volume verification scope |
-| E35 | [codex-handoff-to-chatgpt.md](F:/Documents/artery_demo/docs/codex-handoff-to-chatgpt.md), historical test/deployment records; not proof of current ChatGPT access |
-| E36 | [package.json](F:/Documents/artery_demo/frontend-react/package.json), [requirements.txt](F:/Documents/artery_demo/backend/requirements.txt) and [requirements-model.txt](F:/Documents/artery_demo/backend/requirements-model.txt) |
-| E37 | [compose.yaml](F:/Documents/artery_demo/deploy/compose.yaml), [backend.Dockerfile](F:/Documents/artery_demo/deploy/backend.Dockerfile) and [frontend.Dockerfile](F:/Documents/artery_demo/deploy/frontend.Dockerfile) |
-| E38 | [admin.py](F:/Documents/artery_demo/backend/app/routers/admin.py), access management and audit list |
+| E01 | [App.jsx](../frontend-react/src/App.jsx), protectedPages and public routes |
+| E02 | [main.jsx](../frontend-react/src/main.jsx), React entry |
+| E03 | [main.py](../backend/app/main.py), router registration, sanitized errors and health |
+| E04 | [AuthContext.jsx](../frontend-react/src/context/AuthContext.jsx), AuthProvider restore effect |
+| E05 | [client.js](../frontend-react/src/api/client.js), bearer and current-session 401 handling |
+| E06 | [auth.py](../backend/app/routers/auth.py), real auth endpoints |
+| E07 | [dependencies.py](../backend/app/core/dependencies.py), database-authoritative JWT/user authorization |
+| E08 | [access-policy.json](../frontend-react/src/constants/access-policy.json) and [roles.py](../backend/app/core/roles.py) |
+| E09 | [CaseDetail.jsx](../frontend-react/src/pages/CaseDetail.jsx), CaseEdit, Imaging and CaseHistory |
+| E10 | [Reports.jsx](../frontend-react/src/pages/Reports.jsx), ReportPreview |
+| E11 | [cases-contract.js](../frontend-react/src/api/cases-contract.js), field mapping, updates and uploads |
+| E12 | [cases.py](../backend/app/routers/cases.py), case CRUD subset and upload handlers |
+| E13 | [volume_ingestion.py](../backend/app/services/volume_ingestion.py), bounded NIfTI admission |
+| E14 | [AnalysisResult.jsx](../frontend-react/src/pages/AnalysisResult.jsx), run/history/download/viewer workspace |
+| E15 | [segmentation.py](../backend/app/routers/segmentation.py), protected result/source endpoints |
+| E16 | [SegmentationViewer.jsx](../frontend-react/src/components/SegmentationViewer.jsx), ViewerSession and controls |
+| E17 | [niivue-adapter.js](../frontend-react/src/lib/niivue-adapter.js), createVolumeViewer and releaseViewer |
+| E18 | [volume-geometry.js](../frontend-react/src/lib/volume-geometry.js), inspectVolume, validatePair and volumeBudget |
+| E19 | [volume-loader.js](../frontend-react/src/lib/volume-loader.js) and [volume.worker.js](../frontend-react/src/workers/volume.worker.js) |
+| E20 | [segmentation-contract.js](../frontend-react/src/api/segmentation-contract.js), validated relative API routes and downloads |
+| E21 | [segmentation.spec.js](../frontend-react/tests/e2e/segmentation.spec.js), especially line 132 |
+| E22 | [workspace.spec.js](../frontend-react/tests/e2e/workspace.spec.js), workflows/accessibility |
+| E23 | [volume-viewer.spec.js](../frontend-react/tests/e2e/volume-viewer.spec.js) and [viewer-spike.spec.js](../frontend-react/tests/e2e/viewer-spike.spec.js) |
+| E24 | [conftest.py](../backend/tests/conftest.py), disposable database fixtures and automatic migration/drop behavior |
+| E25 | [create_admin.py](../backend/app/database/create_admin.py), operator bootstrap |
+| E26 | [Research.jsx](../frontend-react/src/pages/Research.jsx), explicit unavailable research services |
+| E27 | [ForgotPassword.jsx](../frontend-react/src/pages/ForgotPassword.jsx), explicit recovery limitation |
+| E28 | [patients.py](../backend/app/routers/patients.py), create/list only |
+| E29 | [nginx.conf](../deploy/nginx.conf), HTTP routing and 300-second upstream timeout |
+| E30 | [compose.model.yaml](../deploy/compose.model.yaml), optional runtime configuration |
+| E31 | [index.css](../frontend-react/src/index.css), responsive breakpoints, focus, reduced-motion and viewer styling |
+| E32 | [Alerts.jsx](../frontend-react/src/pages/Alerts.jsx) and [preferences.js](../frontend-react/src/lib/preferences.js), explicitly local activity/preferences |
+| E33 | [case.py](../backend/app/schemas/case.py), CaseUpdate nullable schema |
+| E34 | [frontend-segmentation-viewer.md](../docs/frontend-segmentation-viewer.md), prior real-volume verification scope |
+| E35 | [codex-handoff-to-chatgpt.md](../docs/codex-handoff-to-chatgpt.md), historical test/deployment records; not proof of current ChatGPT access |
+| E36 | [package.json](../frontend-react/package.json), [requirements.txt](../backend/requirements.txt) and [requirements-model.txt](../backend/requirements-model.txt) |
+| E37 | [compose.yaml](../deploy/compose.yaml), [backend.Dockerfile](../deploy/backend.Dockerfile) and [frontend.Dockerfile](../deploy/frontend.Dockerfile) |
+| E38 | [admin.py](../backend/app/routers/admin.py), access management and audit list |
 
 All three configuration templates exist: backend/.env.example, frontend-react/.env.example and deploy/.env.example. Inspected variable names include VITE_API_URL; JWT signing/issuer/audience and database settings; CORS_ORIGINS, UPLOAD_DIR and OUTPUT_DIR; VASCULAI_MODEL_CHECKPOINT and inference runtime limits; and MODEL_ARTIFACT_DIR/WEB_PORT in deployment configuration. Health routing is configured in the application/proxy, not a separate health-URL template variable. No private .env values, tokens, passwords or credentials are reproduced in this report.
 
@@ -193,7 +193,7 @@ Existing GET handlers may commit audit records. The audit therefore did not use 
 ### Evidence actually inspected
 
 - Current E16-E20, their unit/browser tests and the installed NiiVue 0.69.0 source/types.
-- Existing historical images: F:/Documents/vascuai-artifacts/viewer-verification-20261019/validation-851-slices.png and validation-851-mask-3d.png.
+- Existing historical images: <PRIVATE_ARTIFACT_PATH> and validation-851-mask-3d.png.
 - Current synthetic signed/permuted/anisotropic WebGL viewer tests, keyboard controls, overlay on/off pixels, responsive behavior and resource release.
 - No source CT or prediction volume was modified, resampled or filtered. No new inference or anatomical assessment occurred.
 
@@ -281,7 +281,7 @@ No current backend pytest suite was run. E24 applies migrations and drops/recrea
 
 Temporary audit root:
 
-    C:/Users/vimzz/AppData/Local/Temp/vascuai-web-audit-NWxdPk
+    <LOCAL_TOOL_PATH>
 
 Build used installed Vite's programmatic build with configLoader=runner, external cacheDir and build.outDir beneath that root, emptyOutDir=false. Existing source configuration was read without editing it. The external build passed; it emitted the existing large-chunk warning. Approximate uncompressed lazy outputs included NiiVue 875 kB and codec chunks 603/747 kB. The warning is not a build failure.
 

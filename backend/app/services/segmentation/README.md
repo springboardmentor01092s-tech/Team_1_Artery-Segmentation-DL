@@ -231,7 +231,7 @@ does not edit either source header. No resampling is performed.
 From `backend/`, using the existing handoff (output directory must not exist):
 
 ```powershell
-python -m app.services.segmentation.inference --ct ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_ct.nii.gz --checkpoint ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt --reference-mask ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_reference_mask.nii.gz --allow-reference-unknown-units --output-dir F:/Documents/vascuai-artifacts/runs/case-851-new-run --threshold 0.70 --batch-size 1 --device cpu --threads 4
+python -m app.services.segmentation.inference --ct ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_ct.nii.gz --checkpoint ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/model/artery_unet_10case_weighted_step700.pt --reference-mask ../model/vascuai_model_handoff_for_codex_20261016/vascuai_model_handoff_recovered/sample/case_851_reference_mask.nii.gz --allow-reference-unknown-units --output-dir <PRIVATE_ARTIFACT_PATH> --threshold 0.70 --batch-size 1 --device cpu --threads 4
 ```
 
 The CLI reads the checkpoint and threshold environment variables as defaults;
@@ -348,7 +348,7 @@ From `backend/`:
 ```powershell
 $env:VASCULAI_TEST_CHECKPOINT = $env:VASCULAI_MODEL_CHECKPOINT
 python -m pytest -q
-python scripts/test_postgres.py --bin 'C:\Program Files\PostgreSQL\18\bin'
+python scripts/test_postgres.py --bin '<POSTGRESQL_BIN>'
 python scripts/test_frontend_contract.py
 python -m pip check
 ```

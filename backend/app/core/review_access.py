@@ -29,7 +29,8 @@ def enforce_review_access(request: Request):
         yield
         return
     relative = path[len(prefix):]
-    safe_auth = {("POST", "/auth/login"), ("POST", "/auth/logout"), ("GET", "/auth/me"),
+    safe_auth = {("POST", "/auth/login"), ("POST", "/auth/register"),
+                 ("POST", "/auth/logout"), ("GET", "/auth/me"),
                  ("PATCH", "/auth/me"), ("POST", "/auth/password")}
     if (request.method, relative) in safe_auth:
         yield
